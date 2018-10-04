@@ -27,4 +27,9 @@ class Memory(object):
     @staticmethod
     def create():
         return Memory()
+
+    @staticmethod
+    def get_stack_address(address):
+        return 0x1A0 | address
+
     
