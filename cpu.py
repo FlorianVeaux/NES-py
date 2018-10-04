@@ -298,3 +298,24 @@ class CPU:
         
 
         
+    def set_N(self, val):
+        # sets negative flag if val negative (bit 7 set)
+        self.N = 1 if value & 0x80 else 0
+
+    def set_Z(self, val):
+        # sets zero flag if val is 0
+        self.Z = 1 if value == 0 else 0
+
+    def set_ZN(self, val):
+        self.set_Z(val)
+        self.set_N(val)
+
+    def and(address, mode):
+        self.A = self.A & self.read_uint8(address)
+        self.set_ZN(self.A)
+
+    def asl(address, mode):
+        if mode == AddressingMode.modeAccumulator:
+            self.C = (self.A >> 7) & 1
+            self.A = (self.A <<= 1) & 0xff # force register to stay on 8 bits
+            self.setZN(self.A)
