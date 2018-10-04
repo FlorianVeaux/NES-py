@@ -11,10 +11,10 @@ class Memory(object):
     MEM_SIZE = 65536
 
     def __init__(self):
-        self._memory = np.zeros(MEM_SIZE, dtype='uint8')
+        self._memory = np.zeros(Memory.MEM_SIZE, dtype='uint8')
 
     def reset(self):
-        self._memory = np.zeros(MEM_SIZE, dtype='uint8')
+        self._memory = np.zeros(Memory.MEM_SIZE, dtype='uint8')
         
     def fetch(self, address):
         return self._memory[address]
