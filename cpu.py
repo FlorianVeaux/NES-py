@@ -1,12 +1,12 @@
-from enum import Enum
+from enum import IntEnum
 from memory import Memory
 
-class InterruptType(Enum):
+class InterruptType(IntEnum):
     interruptNone = 1
     interruptNMI = 2
     interruptIRQ = 3
 
-class AddressingMode(Enum):
+class AddressingMode(IntEnum):
     modeAbsolute = 1
     modeAbsoluteX = 2
     modeAbsoluteY = 3
@@ -100,42 +100,45 @@ INSTRUCTION_PAGE_CYCLES = [
 	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
 ]
 
-INSTRUCTION_FUNC = [
-    CPU.BRK, CPU.ORA, CPU.KIL, CPU.SLO, CPU.NOP, CPU.ORA, CPU.ASL, CPU.SLO,
-	CPU.PHP, CPU.ORA, CPU.ASL, CPU.ANC, CPU.NOP, CPU.ORA, CPU.ASL, CPU.SLO,
-	CPU.BPL, CPU.ORA, CPU.KIL, CPU.SLO, CPU.NOP, CPU.ORA, CPU.ASL, CPU.SLO,
-	CPU.CLC, CPU.ORA, CPU.NOP, CPU.SLO, CPU.NOP, CPU.ORA, CPU.ASL, CPU.SLO,
-	CPU.JSR, CPU.AND, CPU.KIL, CPU.RLA, CPU.BIT, CPU.AND, CPU.ROL, CPU.RLA,
-	CPU.PLP, CPU.AND, CPU.ROL, CPU.ANC, CPU.BIT, CPU.AND, CPU.ROL, CPU.RLA,
-	CPU.BMI, CPU.AND, CPU.KIL, CPU.RLA, CPU.NOP, CPU.AND, CPU.ROL, CPU.RLA,
-	CPU.SEC, CPU.AND, CPU.NOP, CPU.RLA, CPU.NOP, CPU.AND, CPU.ROL, CPU.RLA,
-	CPU.RTI, CPU.EOR, CPU.KIL, CPU.SRE, CPU.NOP, CPU.EOR, CPU.LSR, CPU.SRE,
-	CPU.PHA, CPU.EOR, CPU.LSR, CPU.ALR, CPU.JMP, CPU.EOR, CPU.LSR, CPU.SRE,
-	CPU.BVC, CPU.EOR, CPU.KIL, CPU.SRE, CPU.NOP, CPU.EOR, CPU.LSR, CPU.SRE,
-	CPU.CLI, CPU.EOR, CPU.NOP, CPU.SRE, CPU.NOP, CPU.EOR, CPU.LSR, CPU.SRE,
-	CPU.RTS, CPU.ADC, CPU.KIL, CPU.RRA, CPU.NOP, CPU.ADC, CPU.ROR, CPU.RRA,
-	CPU.PLA, CPU.ADC, CPU.ROR, CPU.ARR, CPU.JMP, CPU.ADC, CPU.ROR, CPU.RRA,
-	CPU.BVS, CPU.ADC, CPU.KIL, CPU.RRA, CPU.NOP, CPU.ADC, CPU.ROR, CPU.RRA,
-	CPU.SEI, CPU.ADC, CPU.NOP, CPU.RRA, CPU.NOP, CPU.ADC, CPU.ROR, CPU.RRA,
-	CPU.NOP, CPU.STA, CPU.NOP, CPU.SAX, CPU.STY, CPU.STA, CPU.STX, CPU.SAX,
-	CPU.DEY, CPU.NOP, CPU.TXA, CPU.XAA, CPU.STY, CPU.STA, CPU.STX, CPU.SAX,
-	CPU.BCC, CPU.STA, CPU.KIL, CPU.AHX, CPU.STY, CPU.STA, CPU.STX, CPU.SAX,
-	CPU.TYA, CPU.STA, CPU.TXS, CPU.TAS, CPU.SHY, CPU.STA, CPU.SHX, CPU.AHX,
-	CPU.LDY, CPU.LDA, CPU.LDX, CPU.LAX, CPU.LDY, CPU.LDA, CPU.LDX, CPU.LAX,
-	CPU.TAY, CPU.LDA, CPU.TAX, CPU.LAX, CPU.LDY, CPU.LDA, CPU.LDX, CPU.LAX,
-	CPU.BCS, CPU.LDA, CPU.KIL, CPU.LAX, CPU.LDY, CPU.LDA, CPU.LDX, CPU.LAX,
-	CPU.CLV, CPU.LDA, CPU.TSX, CPU.LAS, CPU.LDY, CPU.LDA, CPU.LDX, CPU.LAX,
-	CPU.CPY, CPU.CMP, CPU.NOP, CPU.DCP, CPU.CPY, CPU.CMP, CPU.DEC, CPU.DCP,
-	CPU.INY, CPU.CMP, CPU.DEX, CPU.AXS, CPU.CPY, CPU.CMP, CPU.DEC, CPU.DCP,
-	CPU.BNE, CPU.CMP, CPU.KIL, CPU.DCP, CPU.NOP, CPU.CMP, CPU.DEC, CPU.DCP,
-	CPU.CLD, CPU.CMP, CPU.NOP, CPU.DCP, CPU.NOP, CPU.CMP, CPU.DEC, CPU.DCP,
-	CPU.CPX, CPU.SBC, CPU.NOP, CPU.ISC, CPU.CPX, CPU.SBC, CPU.INC, CPU.ISC,
-	CPU.INX, CPU.SBC, CPU.NOP, CPU.SBC, CPU.CPX, CPU.SBC, CPU.INC, CPU.ISC,
-	CPU.BEQ, CPU.SBC, CPU.KIL, CPU.ISC, CPU.NOP, CPU.SBC, CPU.INC, CPU.ISC,
-	CPU.SED, CPU.SBC, CPU.NOP, CPU.ISC, CPU.NOP, CPU.SBC, CPU.INC, CPU.ISC,
-]
+# FIXME: this seems buggy (cant import 'CPU'), fix this
+# TODO: uncomment when all functions are done
+# INSTRUCTION_FUNC = [
+#     CPU._brk, CPU._ora, CPU._kil, CPU._slo, CPU._nop, CPU._ora, CPU._asl, CPU._slo,
+# 	CPU._php, CPU._ora, CPU._asl, CPU._anc, CPU._nop, CPU._ora, CPU._asl, CPU._slo,
+# 	CPU._bpl, CPU._ora, CPU._kil, CPU._slo, CPU._nop, CPU._ora, CPU._asl, CPU._slo,
+# 	CPU._clc, CPU._ora, CPU._nop, CPU._slo, CPU._nop, CPU._ora, CPU._asl, CPU._slo,
+# 	CPU._jsr, CPU._and, CPU._kil, CPU._rla, CPU._bit, CPU._and, CPU._rol, CPU._rla,
+# 	CPU._plp, CPU._and, CPU._rol, CPU._anc, CPU._bit, CPU._and, CPU._rol, CPU._rla,
+# 	CPU._bmi, CPU._and, CPU._kil, CPU._rla, CPU._nop, CPU._and, CPU._rol, CPU._rla,
+# 	CPU._sec, CPU._and, CPU._nop, CPU._rla, CPU._nop, CPU._and, CPU._rol, CPU._rla,
+# 	CPU._rti, CPU._eor, CPU._kil, CPU._sre, CPU._nop, CPU._eor, CPU._lsr, CPU._sre,
+# 	CPU._pha, CPU._eor, CPU._lsr, CPU._alr, CPU._jmp, CPU._eor, CPU._lsr, CPU._sre,
+# 	CPU._bvc, CPU._eor, CPU._kil, CPU._sre, CPU._nop, CPU._eor, CPU._lsr, CPU._sre,
+# 	CPU._cli, CPU._eor, CPU._nop, CPU._sre, CPU._nop, CPU._eor, CPU._lsr, CPU._sre,
+# 	CPU._rts, CPU._adc, CPU._kil, CPU._rra, CPU._nop, CPU._adc, CPU._ror, CPU._rra,
+# 	CPU._pla, CPU._adc, CPU._ror, CPU._arr, CPU._jmp, CPU._adc, CPU._ror, CPU._rra,
+# 	CPU._bvs, CPU._adc, CPU._kil, CPU._rra, CPU._nop, CPU._adc, CPU._ror, CPU._rra,
+# 	CPU._sei, CPU._adc, CPU._nop, CPU._rra, CPU._nop, CPU._adc, CPU._ror, CPU._rra,
+# 	CPU._nop, CPU._sta, CPU._nop, CPU._sax, CPU._sty, CPU._sta, CPU._stx, CPU._sax,
+# 	CPU._dey, CPU._nop, CPU._txa, CPU._xaa, CPU._sty, CPU._sta, CPU._stx, CPU._sax,
+# 	CPU._bcc, CPU._sta, CPU._kil, CPU._ahx, CPU._sty, CPU._sta, CPU._stx, CPU._sax,
+# 	CPU._tya, CPU._sta, CPU._txs, CPU._tas, CPU._shy, CPU._sta, CPU._shx, CPU._ahx,
+# 	CPU._ldy, CPU._lda, CPU._ldx, CPU._lax, CPU._ldy, CPU._lda, CPU._ldx, CPU._lax,
+# 	CPU._tay, CPU._lda, CPU._tax, CPU._lax, CPU._ldy, CPU._lda, CPU._ldx, CPU._lax,
+# 	CPU._bcs, CPU._lda, CPU._kil, CPU._lax, CPU._ldy, CPU._lda, CPU._ldx, CPU._lax,
+# 	CPU._clv, CPU._lda, CPU._tsx, CPU._las, CPU._ldy, CPU._lda, CPU._ldx, CPU._lax,
+# 	CPU._cpy, CPU._cmp, CPU._nop, CPU._dcp, CPU._cpy, CPU._cmp, CPU._dec, CPU._dcp,
+# 	CPU._iny, CPU._cmp, CPU._dex, CPU._axs, CPU._cpy, CPU._cmp, CPU._dec, CPU._dcp,
+# 	CPU._bne, CPU._cmp, CPU._kil, CPU._dcp, CPU._nop, CPU._cmp, CPU._dec, CPU._dcp,
+# 	CPU._cld, CPU._cmp, CPU._nop, CPU._dcp, CPU._nop, CPU._cmp, CPU._dec, CPU._dcp,
+# 	CPU._cpx, CPU._sbc, CPU._nop, CPU._isc, CPU._cpx, CPU._sbc, CPU._inc, CPU._isc,
+# 	CPU._inx, CPU._sbc, CPU._nop, CPU._sbc, CPU._cpx, CPU._sbc, CPU._inc, CPU._isc,
+# 	CPU._beq, CPU._sbc, CPU._kil, CPU._isc, CPU._nop, CPU._sbc, CPU._inc, CPU._isc,
+# 	CPU._sed, CPU._sbc, CPU._nop, CPU._isc, CPU._nop, CPU._sbc, CPU._inc, CPU._isc,
+# ]
 
 class CPU:
+
     def __init__(self):
         self.memory = Memory.create()
         self.cycles = 0
@@ -153,7 +156,12 @@ class CPU:
         self.O = False  # Overflow flag
         self.N = False  # Negative flag
         #ENDOF PROCESSOR FLAGS
-    
+
+    def write_uint8(self, address, val):
+        """Writes a byte at the given address
+        """
+        return self.memory.store(address, val)
+
     def read_uint8(self, address):
         """Reads a byte from the memory at the given address
         """
@@ -167,7 +175,7 @@ class CPU:
         lo = self.memory.fetch(address)
         hi = self.memory.fetch(address + 1)
         return hi << 8 | lo
-    
+
     def push_uint8(self, val):
         """Push the given val onto the stack
         """
@@ -175,7 +183,7 @@ class CPU:
         stack_ad = self.memory.get_stack_address(self.sp)
         self.memory.store(stack_ad, val)
         self.sp = self.sp - 1
-    
+
     def push_uint16(self, val):
         """Push a given uint16 onto the stack
         """
@@ -183,7 +191,7 @@ class CPU:
         lo = val & 0xFF
         self.push_uint8(hi)
         self.push_uint8(lo)
-    
+
     def pop_uint8(self):
         self.sp = self.sp + 1
         stack_ad = self.memory.get_stack_address(self.sp)
@@ -214,7 +222,7 @@ class CPU:
         self.B = (flags >> 4) & 1
         self.O = (flags >> 6) & 1
         self.N = (flags >> 7) & 1
-    
+
     def reset(self):
         self.pc = self.read_uint16(0xFFFC)
         self.sp = 0xFD
@@ -225,7 +233,7 @@ class CPU:
         mode = INSTRUCTION_MODES[opcode]
         page_crossed = False # Set to true when an underlying addition between a uint16 and a uint8 carries to the high byte
         step_cycles = 0
-        
+
         if mode == AddressingMode.modeAbsolute:
             arg = self.read_uint16(self.pc + 1)
         elif mode == AddressingMode.modeAbsoluteX:
@@ -254,7 +262,7 @@ class CPU:
         elif mode == AddressingMode.modeIndexedIndirect:
             # Warning, there's a bug, the addition with X does not carry. TODO Need to be implemented
             arg = self.read_uint16(self.read_uint16(self.pc + 1) + self.X)
-        elif mode == AddressingMode.modeIndirect
+        elif mode == AddressingMode.modeIndirect:
             # Same bug
             arg = self.read_uint16(self.read_uint16(self.pc + 1))
         elif mode == AddressingMode.modeIndirectIndexed:
@@ -265,7 +273,7 @@ class CPU:
             branch_offset = self.read_uint8(self.pc + 1)
             if(branch_offset & 0b10000000):
                 branch_offset = branch_offset - 256
-            
+
             arg = self.pc + 1 + branch_offset
         elif mode == AddressingMode.modeZeroPage:
             arg = self.read_uint8(self.pc + 1)
@@ -277,45 +285,50 @@ class CPU:
             arg = (self.read_uint8(self.pc + 1) + self.Y) & 0xff
         else:
             raise Exception("Unknown mode (%d)" % mode)
-        
+
         # Increment program counter
         self.pc += INSTRUCTION_SIZES[opcode]
         step_cycles += INSTRUCTION_CYCLES[opcode]
 
         if page_crossed:
             step_cycles += INSTRUCTION_PAGE_CYCLES[opcode]
-        
+
         self.execute_instruction(opcode, arg, mode)
-        
-    def execute_instruction(opcode, address, mode):
-        self.INSTRUCTION_FUNC[opcode](address, mode)
-    
+
+    # TODO: fix INSTRUCTION_FUNC bug
+    # def execute_instruction(opcode, address, mode):
+    #     CPU.INSTRUCTION_FUNC[opcode](address, mode)
+
     @staticmethod
     def _does_addition_carry(big, small):
         return 0xFF00 & (big + small) != 0xFF00 & big
 
-        
-        
-
-        
     def set_N(self, val):
         # sets negative flag if val negative (bit 7 set)
-        self.N = 1 if value & 0x80 else 0
+        self.N = 1 if val & 0x80 else 0
 
     def set_Z(self, val):
         # sets zero flag if val is 0
-        self.Z = 1 if value == 0 else 0
+        self.Z = 1 if val == 0 else 0
 
     def set_ZN(self, val):
         self.set_Z(val)
         self.set_N(val)
 
-    def and(address, mode):
+    def _and(self, address, mode):
         self.A = self.A & self.read_uint8(address)
         self.set_ZN(self.A)
 
-    def asl(address, mode):
-        if mode == AddressingMode.modeAccumulator:
-            self.C = (self.A >> 7) & 1
-            self.A = (self.A <<= 1) & 0xff # force register to stay on 8 bits
-            self.setZN(self.A)
+    def _asl(self, address, mode):
+        modify = mode == AddressingMode.modeAccumulator
+        val = self.A if modify else self.read_uint8(address)
+        self.C = (val >> 7) & 1
+        val <<= 1
+        # left shift makes the int grow to 9 bits, truncate it
+        val = val & 0xff
+        self.set_ZN(val)
+        if modify:
+            self.A = val
+        else:
+            self.write_uint8(address, val)
+
