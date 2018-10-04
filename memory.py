@@ -13,6 +13,6 @@ class Memory(object):
         self._memory = np.zeros(MEM_SIZE, dtype='uint8')
 
     def reset():
-        self.
+        pass
         
     
