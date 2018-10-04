@@ -22,7 +22,7 @@ class AddressingMode(Enum):
     modeZeroPageY = 13
 
 # Addressing mode for each instruction
-instructionModes = [
+INSTRUCTION_MODES = [
 	6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
 	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
 	1, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
@@ -42,7 +42,7 @@ instructionModes = [
 ]
 
 # Size of each instruction in bytes
-instructionSizes = [
+INSTRUCTION_SIZES = [
 	1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
 	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
 	3, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
@@ -62,7 +62,7 @@ instructionSizes = [
 ]
 
 # Number of cycles used by each instruction
-instructionCycles = [
+INSTRUCTION_CYCLES = [
     7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,
 	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
 	6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6,
@@ -81,7 +81,7 @@ instructionCycles = [
 	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
 ]
 
-instructionPageCycles = [
+INSTRUCTION_PAGE_CYCLES = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -100,7 +100,7 @@ instructionPageCycles = [
 	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
 ]
 
-instructionNames = [
+INSTRUCTION_NAMES = [
     "BRK", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
 	"PHP", "ORA", "ASL", "ANC", "NOP", "ORA", "ASL", "SLO",
 	"BPL", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
@@ -137,7 +137,7 @@ instructionNames = [
 
 class CPU:
     def __init__(self):
-        self.memory = Memory()
+        self.memory = Memory.create()
         self.cycles = 0
         self.pc = 0 # Program counter
         self.sp = 0 # Stack Pointer
@@ -145,13 +145,13 @@ class CPU:
         self.X = 0  # Index Register X
         self.Y = 0  # Index Register Y
         # PROCESSOR FLAGS
-        self.C = 0  # Carry Flag
-        self.Z = 0  # Zero Flag
-        self.I = 0  # Interrupt Disable
-        self.D = 0  # Decimal Mode
-        self.B = 0  # Break command
-        self.O = 0  # Overflow flag
-        self.N = 0  # Negative flag
+        self.C = False  # Carry Flag
+        self.Z = False  # Zero Flag
+        self.I = False  # Interrupt Disable
+        self.D = False  # Decimal Mode
+        self.B = False  # Break command
+        self.O = False  # Overflow flag
+        self.N = False  # Negative flag
         #ENDOF PROCESSOR FLAGS
     
     def read_uint16(self, address):
@@ -159,6 +159,16 @@ class CPU:
         hi = self.memory.fetch(address + 1)
         return hi << 8 | lo
     
+    def setFlags(self, flags):
+        self.C = (flags >> 0) & 1
+        self.Z = (flags >> 1) & 1
+        self.I = (flags >> 2) & 1
+        self.D = (flags >> 3) & 1
+        self.B = (flags >> 4) & 1
+        self.O = (flags >> 6) & 1
+        self.N = (flags >> 7) & 1
+    
     def reset(self):
         self.pc = self.read_uint16(0xFFFC)
         self.sp = 0xFD
+        self.setFlags(0b100100)
