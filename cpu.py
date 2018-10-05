@@ -1,12 +1,12 @@
-from enum import Enum
+from enum import IntEnum
 from memory import Memory
 
-class InterruptType(Enum):
+class InterruptType(IntEnum):
     interruptNone = 1
     interruptNMI = 2
     interruptIRQ = 3
 
-class AddressingMode(Enum):
+class AddressingMode(IntEnum):
     modeAbsolute = 1
     modeAbsoluteX = 2
     modeAbsoluteY = 3
@@ -136,6 +136,7 @@ INSTRUCTION_NAMES = [
 ]
 
 class CPU:
+
     def __init__(self):
         self.memory = Memory.create()
         self.total_cycles = 0
@@ -169,7 +170,7 @@ class CPU:
         lo = self.memory.fetch(address)
         hi = self.memory.fetch(address + 1)
         return hi << 8 | lo
-    
+
     def push_uint8(self, val):
         """Push the given val onto the stack
         """
@@ -177,7 +178,7 @@ class CPU:
         stack_ad = self.memory.get_stack_address(self.sp)
         self.memory.store(stack_ad, val)
         self.sp = self.sp - 1
-    
+
     def push_uint16(self, val):
         """Push a given uint16 onto the stack
         """
@@ -185,7 +186,7 @@ class CPU:
         lo = val & 0xFF
         self.push_uint8(hi)
         self.push_uint8(lo)
-    
+
     def pop_uint8(self):
         self.sp = self.sp + 1
         stack_ad = self.memory.get_stack_address(self.sp)
@@ -216,7 +217,7 @@ class CPU:
         # self.B = (flags >> 4) & 1 Not allowed, bug ?
         self.O = (flags >> 6) & 1
         self.N = (flags >> 7) & 1
-    
+
     def reset(self):
         self.pc = self.read_uint16(0xFFFC)
         self.sp = 0xFD
@@ -267,7 +268,7 @@ class CPU:
             branch_offset = self.read_uint8(self.pc + 1)
             if(branch_offset & 0b10000000):
                 branch_offset = branch_offset - 256
-            
+
             arg = self.pc + 1 + branch_offset
         elif mode == AddressingMode.modeZeroPage:
             arg = self.read_uint8(self.pc + 1)
@@ -279,7 +280,7 @@ class CPU:
             arg = (self.read_uint8(self.pc + 1) + self.Y) & 0xff
         else:
             raise Exception("Unknown mode (%d)" % mode)
-        
+
         # Increment program counter
         self.pc += INSTRUCTION_SIZES[opcode]
         self.step_cycles += INSTRUCTION_CYCLES[opcode]
