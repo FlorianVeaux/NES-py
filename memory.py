@@ -24,6 +24,9 @@ class Memory(object):
         self._memory[address] = value
         return tmp
 
+    def load_ROM(self, initAddress, values):
+        self._memory[initAddress:initAddress+values.length()] = values
+
     @staticmethod
     def create():
         return Memory()
