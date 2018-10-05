@@ -1,6 +1,6 @@
 from enum import IntEnum
 from memory import Memory
-
+import pdb
 class InterruptType(IntEnum):
     interruptNone = 1
     interruptNMI = 2
@@ -43,22 +43,22 @@ INSTRUCTION_MODES = [
 
 # Size of each instruction in bytes
 INSTRUCTION_SIZES = [
-	1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-	3, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-	1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-	1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 0, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 0, 3, 0, 0,
-	2, 2, 2, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+	1, 2, 0, 2, 2, 2, 2, 2, 1, 2, 1, 0, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3,
+	3, 2, 0, 2, 2, 2, 2, 2, 1, 2, 1, 0, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3,
+	1, 2, 0, 2, 2, 2, 2, 2, 1, 2, 1, 0, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3,
+	1, 2, 0, 2, 2, 2, 2, 2, 1, 2, 1, 0, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 2, 1, 0, 3, 3, 3, 3,
+	2, 2, 0, 0, 2, 2, 2, 2, 1, 3, 1, 0, 0, 3, 0, 0,
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 0, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 3, 1, 0, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 2, 1, 0, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 2, 1, 2, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3,
 ]
 
 # Number of cycles used by each instruction
@@ -129,10 +129,46 @@ INSTRUCTION_NAMES = [
 	"INY", "CMP", "DEX", "AXS", "CPY", "CMP", "DEC", "DCP",
 	"BNE", "CMP", "KIL", "DCP", "NOP", "CMP", "DEC", "DCP",
 	"CLD", "CMP", "NOP", "DCP", "NOP", "CMP", "DEC", "DCP",
-	"CPX", "SBC", "NOP", "ISC", "CPX", "SBC", "INC", "ISC",
-	"INX", "SBC", "NOP", "SBC", "CPX", "SBC", "INC", "ISC",
-	"BEQ", "SBC", "KIL", "ISC", "NOP", "SBC", "INC", "ISC",
-	"SED", "SBC", "NOP", "ISC", "NOP", "SBC", "INC", "ISC",
+	"CPX", "SBC", "NOP", "ISB", "CPX", "SBC", "INC", "ISB",
+	"INX", "SBC", "NOP", "SBC", "CPX", "SBC", "INC", "ISB",
+	"BEQ", "SBC", "KIL", "ISB", "NOP", "SBC", "INC", "ISB",
+	"SED", "SBC", "NOP", "ISB", "NOP", "SBC", "INC", "ISB",
+]
+
+INSTRUCTION_IS_VALID = [
+    True , True , False, False, False, True , True , False,
+    True , True , True , False, False, True , True , False,
+    True , True , False, False, False, True , True , False,
+    True , True , False, False, False, True , True , False,
+    True , True , False, False, True , True , True , False,
+    True , True , True , False, True , True , True , False,
+    True , True , False, False, False, True , True , False,
+    True , True , False, False, False, True , True , False,
+    True , True , False, False, False, True , True , False,
+    True , True , True , False, True , True , True , False,
+    True , True , False, False, False, True , True , False,
+    True , True , False, False, False, True , True , False,
+    True , True , False, False, False, True , True , False,
+    True , True , True , False, True , True , True , False,
+    True , True , False, False, False, True , True , False,
+    True , True , False, False, False, True , True , False,
+    False, True , False, False, True , True , True , False,
+    True , False, True , False, True , True , True , False,
+    True , True , False, False, True , True , True , False,
+    True , True , True , False, False, True , False, False,
+
+    True , True , True , False, True , True , True , False,
+    True , True , True , False, True , True , True , False,
+    True , True , False, False, True , True , True , False,
+    True , True , True , False, True , True , True , False,
+    True , True , False, False, True , True , True , False,
+    True , True , True , False, True , True , True , False,
+    True , True , False, False, False, True , True , False,
+    True , True , False, False, False, True , True , False,
+    True , True , False, False, True , True , True , False,
+    True , True , True , False, True , True , True , False,
+    True , True , False, False, False, True , True , False,
+    True , True , False, False, False, True , True , False,
 ]
 
 class CPU:
@@ -152,24 +188,35 @@ class CPU:
         self.I = False  # Interrupt Disable
         self.D = False  # Decimal Mode
         self.B = False  # Break command
+        self.U = False  # Not used
         self.O = False  # Overflow flag
         self.N = False  # Negative flag
         #ENDOF PROCESSOR FLAGS
-        self.instruction_table = [getattr(self, i) for i in INSTRUCTION_NAMES]
+        self.instruction_table = [getattr(self, i) if hasattr(self, i) else None  for i in INSTRUCTION_NAMES]
+        self.reset()
     
     def read_uint8(self, address):
         """Reads a byte from the memory at the given address
         """
 
-        return self.memory.fetch(address)
+        return int(self.memory.fetch(address))
+
+    def read_uint16_bug(self, address):
+        """Reads an uint16 from the memory
+        """
+        a = address
+        b = (a & 0xFF00) | ((a+1) & 0x00FF)
+        lo = self.memory.fetch(a)
+        hi = self.memory.fetch(b)
+        return int(hi << 8 | lo)
 
     def read_uint16(self, address):
-        """Reads an uint16 from the memory
+        """Reads an uint16 from the memory the buggy way because the processor does not work correctly
         """
 
         lo = self.memory.fetch(address)
         hi = self.memory.fetch(address + 1)
-        return hi << 8 | lo
+        return int(hi << 8 | lo)
 
     def push_uint8(self, val):
         """Push the given val onto the stack
@@ -190,13 +237,13 @@ class CPU:
     def pop_uint8(self):
         self.sp = self.sp + 1
         stack_ad = self.memory.get_stack_address(self.sp)
-        return self.memory.fetch(stack_ad)
+        return int(self.memory.fetch(stack_ad))
 
     def pop_uint16(self):
         """Pops two bytes as one number from the stack"""
         lo = self.pop_uint8()
         hi = self.pop_uint8()
-        return hi << 8 | lo
+        return int(hi << 8 | lo)
 
     def getFlags(self):
         flags = 0x00
@@ -204,7 +251,8 @@ class CPU:
         flags |= self.Z << 1
         flags |= self.I << 2
         flags |= self.D << 3
-        flags |= 1 # Not allowed, bug ?
+        flags |= self.B << 4
+        flags |= self.U << 5 # Not used
         flags |= self.O << 6
         flags |= self.N << 7
         return flags
@@ -214,7 +262,8 @@ class CPU:
         self.Z = (flags >> 1) & 1
         self.I = (flags >> 2) & 1
         self.D = (flags >> 3) & 1
-        # self.B = (flags >> 4) & 1 Not allowed, bug ?
+        self.B = (flags >> 4) & 1
+        self.U = 1 #Not used
         self.O = (flags >> 6) & 1
         self.N = (flags >> 7) & 1
 
@@ -223,9 +272,96 @@ class CPU:
         self.sp = 0xFD
         self.setFlags(0b100100)
 
-    def step(self):
+    def _get_mneumonic(self, opcode, mode, args):
+        s = " " if INSTRUCTION_IS_VALID[opcode] else "*"
+        s += INSTRUCTION_NAMES[opcode] + " "
+        if mode == AddressingMode.modeAbsolute:
+            arg = self.read_uint16(self.pc + 1)
+            if INSTRUCTION_NAMES[opcode] not in ["JMP", "JSR"]:
+                s += "${0:04X} = {1:02X}".format(
+                        arg,
+                        self.read_uint8(arg)
+                    )
+            else:
+                s += "${0:04X}".format(
+                    arg
+                )
+        elif mode == AddressingMode.modeAbsoluteX:
+            arg = self.read_uint16(self.pc + 1)
+            arg_x = (arg + self.X) & 0xFFFF
+            s += "${0:04X},X @ {1:04X} = {2:02X}".format(
+                arg,
+                arg_x,
+                self.read_uint8(arg_x)
+                )
+        elif mode == AddressingMode.modeAbsoluteY:
+            arg = self.read_uint16(self.pc + 1)
+            arg_y = (arg + self.Y) & 0xFFFF
+            s += '${0:04X},Y @ {1:04X} = {2:02X}'.format(arg, arg_y, self.read_uint8(arg_y))
+        elif mode == AddressingMode.modeAccumulator:
+            s += "A"
+        elif mode == AddressingMode.modeImmediate:
+            s += '#${0:02X}'.format(args[0])
+        elif mode == AddressingMode.modeImplied:
+            pass
+        elif mode == AddressingMode.modeIndexedIndirect:
+            s += "(${0:02X},X) @ {1:02X} = {2:04X} = RESULT".format(
+                    args[0],
+                    (args[0] + self.X) & 0xFF,
+                    self.read_uint16_bug((args[0] + self.X) & 0xFF)
+                )
+        elif mode == AddressingMode.modeIndirect:
+            arg = self.read_uint16(self.pc + 1)
+            s += "(${0:04X}) = {1:04X}".format(arg, self.read_uint16_bug(arg))
+        elif mode == AddressingMode.modeIndirectIndexed:
+            s += "(${0:02X}),Y = {1:04X} @ {2:04X} = RESULT".format(
+                    args[0],
+                    self.read_uint16_bug(args[0]),
+                    (self.read_uint16_bug(args[0]) + self.Y) & 0xFFFF,
+                )
+        elif mode == AddressingMode.modeRelative:
+            branch_offset = self.read_uint8(self.pc + 1)
+            if(branch_offset & 0b10000000):
+                branch_offset = branch_offset - 256
+
+            arg = self.pc + 2 + branch_offset
+            s += "${0:04X}".format(arg)
+        elif mode == AddressingMode.modeZeroPage:
+            s += "${0:02X} = {1:02X}".format(args[0], self.read_uint8(args[0]))
+        elif mode == AddressingMode.modeZeroPageX:
+            arg = self.read_uint8(self.pc+1)
+            arg_x = (arg + self.X) & 0xFF
+            s += "${0:02X},X @ {1:02X} = {2:02X}".format(
+                arg,
+                arg_x,
+                self.read_uint8(arg_x)
+            )
+        elif mode == AddressingMode.modeZeroPageY:
+            s += "${0:02X},Y @ {1:02X} = {2:02X}".format(
+                args[0],
+                (args[0] + self.Y) & 0xFF,
+                self.read_uint8((args[0] + self.Y) & 0xFF)
+            )
+        return s
+      
+
+    def step(self, debug=False):
         opcode = self.read_uint8(self.pc)
         mode = INSTRUCTION_MODES[opcode]
+        if(debug):
+            args = [self.read_uint8(self.pc+i) for i in range(1, INSTRUCTION_SIZES[opcode])]
+            debug_data = {
+                'PC': '{0:04X}'.format(self.pc),
+                'opcode': '{0:02X}'.format(opcode),
+                'args': ['{0:02X}'.format(a) for a in args],
+                'mneumonic': self._get_mneumonic(opcode, mode, args),
+                'A': 'A:{0:02X}'.format(self.A),
+                'X': 'X:{0:02X}'.format(self.X),
+                'Y': 'Y:{0:02X}'.format(self.Y),
+                'P': 'P:{0:02X}'.format(self.getFlags()),
+                'SP': 'SP:{0:02X}'.format(self.sp)
+            }
+        
         page_crossed = False # Set to true when an underlying addition between a uint16 and a uint8 carries to the high byte
         self.step_cycles = 0
         
@@ -241,7 +377,7 @@ class CPU:
             uint16_address = self.read_uint16(self.pc + 1)
             uint8_index_register = self.Y
 
-            arg = uint16_address + uint8_index_register
+            arg = (uint16_address + uint8_index_register) & 0xFFFF
             page_crossed = self.pagesDiffer(uint16_address, arg)
         elif mode == AddressingMode.modeAccumulator:
             # Works on self.A directly
@@ -256,20 +392,22 @@ class CPU:
             arg = 0
         elif mode == AddressingMode.modeIndexedIndirect:
             # Warning, there's a bug, the addition with X does not carry. TODO Need to be implemented
-            arg = self.read_uint16(self.read_uint16(self.pc + 1) + self.X)
+            arg = self.read_uint16_bug((self.read_uint8(self.pc+1) + self.X) & 0xFF)
         elif mode == AddressingMode.modeIndirect:
             # Same bug
-            arg = self.read_uint16(self.read_uint16(self.pc + 1))
+            arg = self.read_uint16_bug(self.read_uint16(self.pc + 1))
+            print(hex(arg))
         elif mode == AddressingMode.modeIndirectIndexed:
             # Same bug
-            arg = self.read_uint16(self.read_uint16(self.pc + 1)) + self.Y
+
+            arg = (self.read_uint16_bug(self.read_uint8(self.pc + 1)) + self.Y) & 0xFFFF
             page_crossed = self.pagesDiffer(arg - self.Y, arg)
         elif mode == AddressingMode.modeRelative:
             branch_offset = self.read_uint8(self.pc + 1)
             if(branch_offset & 0b10000000):
                 branch_offset = branch_offset - 256
 
-            arg = self.pc + 1 + branch_offset
+            arg = self.pc + 2 + branch_offset
         elif mode == AddressingMode.modeZeroPage:
             arg = self.read_uint8(self.pc + 1)
         elif mode == AddressingMode.modeZeroPageX:
@@ -288,10 +426,16 @@ class CPU:
         if page_crossed:
             self.step_cycles += INSTRUCTION_PAGE_CYCLES[opcode]
         
-        self.execute_instruction(opcode, arg, mode)
+        rval = self.execute_instruction(opcode, arg, mode)
+        if debug:
+            debug_data['cycles'] = self.step_cycles 
+            if rval is not None:
+                debug_data['mneumonic'] = debug_data['mneumonic'].replace("RESULT", rval)
+            return debug_data
+        return
         
     def execute_instruction(self, opcode, address, mode):
-        self.instruction_table[opcode](address, mode)
+        return self.instruction_table[opcode](address, mode)
     
     @staticmethod
     def pagesDiffer(a1, a2):
@@ -312,15 +456,18 @@ class CPU:
     def ADC(self, address, mode):
         a = self.A
         b = self.read_uint8(address)
-        c = self.C
+        c = int(self.C)
         self.A = (a + b + c) & 0xFF
         self.set_ZN(self.A)
-        self.C =  a + b + c > 255 # set carry if overflow happens
-        self.O = (a^b) & 0b10000000 != 0 and (a^self.A) & 0b10000000 != 0
+        self.C =  (a + b + c) > 255 # set carry if overflow happens
+        self.O = (a^b) & 0b10000000 == 0 and (a^self.A) & 0b10000000 != 0
+        return '{0:02X}'.format(b)
 
     def AND(self, address, mode):
-        self.A = self.A & self.read_uint8(address)
+        val = self.read_uint8(address)
+        self.A = self.A & val
         self.set_ZN(self.A)
+        return '{0:02X}'.format(val)
 
     def ASL(self, address, mode):
         if mode == AddressingMode.modeAccumulator:
@@ -350,13 +497,13 @@ class CPU:
         if(self.Z):
             page_crossed = self.pagesDiffer(self.pc, address)
             self.pc = address
-            self.step_cycles += 1 + 2*page_crossed
+            self.step_cycles += 1 + page_crossed
 
     def BIT(self, address, mode):
         value = self.read_uint8(address)
         self.set_Z(self.A & value)
-        self.N = value & 0b10000000
-        self.O = value & 0b01000000
+        self.set_N(value)
+        self.O = (value >> 6) & 1
 
     def BMI(self, address, mode):
         if(self.N):
@@ -411,6 +558,7 @@ class CPU:
         mem_val = self.read_uint8(address)
         self.C = self.A >= mem_val
         self.set_ZN(self.A - mem_val)
+        return '{0:02X}'.format(mem_val)
 
     def CPX(self, address, mode):
         mem_val = self.read_uint8(address)
@@ -422,6 +570,12 @@ class CPU:
         self.C = self.Y >= mem_val
         self.set_ZN(self.Y - mem_val)
 
+    def DCP(self, address, mode):
+        old_val = self.read_uint8(address)
+        self.DEC(address, mode)
+        self.CMP(address, mode)
+        return '{0:02X}'.format(old_val)
+    
     def DEC(self, address, mode):
         new_val = (self.read_uint8(address) - 1) & 0xFF
         self.memory.store(address, new_val)
@@ -436,8 +590,10 @@ class CPU:
         self.set_ZN(self.Y)
 
     def EOR(self, address, mode):
-        self.A = self.A ^ self.read_uint8(address)
+        val = self.read_uint8(address)
+        self.A = self.A ^ val
         self.set_ZN(self.A)
+        return '{0:02X}'.format(val)
 
     def INC(self, address, mode):
         new_val = (self.read_uint8(address) + 1) & 0xFF
@@ -452,6 +608,12 @@ class CPU:
         self.Y = (self.Y + 1) & 0xFF
         self.set_ZN(self.Y)
 
+    def ISB(self, address, mode):
+        old_val = self.read_uint8(address)
+        self.INC(address, mode)
+        self.SBC(address, mode)
+        return '{0:02X}'.format(old_val)
+    
     def JMP(self, address, mode):
         self.pc = address
 
@@ -459,9 +621,15 @@ class CPU:
         self.push_uint16(self.pc - 1)
         self.pc = address
 
+    def LAX(self, address, mode):
+        self.LDA(address, mode)
+        self.LDX(address, mode)
+        return '{0:02X}'.format(self.A)
+    
     def LDA(self, address, mode):
         self.A = self.read_uint8(address)
         self.set_ZN(self.A)
+        return '{0:02X}'.format(self.A)
 
     def LDX(self, address, mode):
         self.X = self.read_uint8(address)
@@ -474,12 +642,12 @@ class CPU:
     def LSR(self, address, mode):
         if mode == AddressingMode.modeAccumulator:
             self.C = self.A & 1
-            self.A >> 1
+            self.A = self.A >> 1
             self.set_ZN(self.A)
         else:
             value = self.read_uint8(address)
             self.C = value & 1
-            value >> 1
+            value = value >> 1
             self.memory.store(address, value)
             self.set_ZN(value)
 
@@ -487,32 +655,40 @@ class CPU:
         pass
 
     def ORA(self, address, mode):
-        self.A |= self.read_uint8(address)
+        val = self.read_uint8(address)
+        self.A |= val
         self.set_ZN(self.A)
+        return '{0:02X}'.format(val)
 
     def PHA(self, address, mode):
-        self.memory.store(address, self.A)
+        self.push_uint8(self.A)
 
     def PHP(self, address, mode):
-        self.memory.store(address, self.getFlags())
+        self.push_uint8(self.getFlags() | 0x10)
 
     def PLA(self, address, mode):
         self.A = self.pop_uint8()
         self.set_ZN(self.A)
 
     def PLP(self, address, mode):
-        self.setFlags(self.pop_uint8())
+        self.setFlags(self.pop_uint8()&0xEF | 0x20)
 
+    def RLA(self, address, mode):
+        old_val = self.read_uint8(address)
+        self.ROL(address, mode)
+        self.AND(address, mode)
+        return '{0:02X}'.format(old_val)
+    
     def ROL(self, address, mode):
         if mode == AddressingMode.modeAccumulator:
-            hi_a = self.A & 0b10000000
-            self.A = (self.A << 1) | (self.C)
+            hi_a = (self.A & 0b10000000) >> 7
+            self.A = ((self.A << 1) & 0xFF) | (self.C)
             self.C = hi_a
             self.set_ZN(self.A)
         else:
             value = self.read_uint8(address)
-            hi_a = value & 0b10000000
-            value = (value << 1) | (self.C)
+            hi_a = (value & 0b10000000) >> 7
+            value = ((value << 1) & 0xFF) | (self.C)
             self.C = hi_a
             self.memory.store(address, value)
             self.set_ZN(value)
@@ -531,6 +707,12 @@ class CPU:
             self.memory.store(address, value)
             self.set_ZN(value)
 
+    def RRA(self, address, mode):
+        old_val = self.read_uint8(address)
+        self.ROR(address, mode)
+        self.ADC(address, mode)
+        return '{0:02X}'.format(old_val)
+    
     def RTI(self, address, mode):
         self.setFlags(self.pop_uint8())
         self.pc = self.pop_uint16()
@@ -538,16 +720,20 @@ class CPU:
     def RTS(self, address, mode):
         self.pc = self.pop_uint16() + 1
 
+    def SAX(self, address, mode):
+        return '{0:02X}'.format(self.memory.store(address, self.A & self.X))
+    
     def SBC(self, address, mode):
-        a = self.A
-        b = self.read_uint8(address)
-        result = a - b - (1 - self.C)
+        a = int(self.A)
+        b = int(self.read_uint8(address))
+        c = int(self.C)
+        result = a - b - (1 - c)
         self.A = result & 0xFF
         self.set_ZN(self.A)
 
         self.C = 1 if result >= 0 else 0
         self.O = (a^b) & 0b10000000 != 0 and (a^self.A) & 0b10000000 != 0
-
+        return '{0:02X}'.format(b)
 
     def SEC(self, address, mode):
         self.C = True
@@ -558,8 +744,21 @@ class CPU:
     def SEI(self, address, mode):
         self.I = True
 
+    def SRE(self, address, mode):
+        old_val = self.read_uint8(address)
+        self.LSR(address, mode)
+        self.EOR(address, mode)
+        return '{0:02X}'.format(old_val)
+
+    
+    def SLO(self, address, mode):
+        old_val = self.read_uint8(address)
+        self.ASL(address, mode)
+        self.ORA(address, mode)
+        return '{0:02X}'.format(old_val)
+    
     def STA(self, address, mode):
-        self.memory.store(address, self.A)
+        return '{0:02X}'.format(self.memory.store(address, self.A))
 
     def STX(self, address, mode):
         self.memory.store(address, self.X)

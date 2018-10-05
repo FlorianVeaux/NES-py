@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "/Users/florianveaux/.local/share/virtualenvs/NES-py-wTsMME30/bin/python"
+    "python.pythonPath": "/Users/florianveaux/.local/share/virtualenvs/NES-py-wTsMME30/bin/python",
+    "python.linting.pylintEnabled": false
 }
