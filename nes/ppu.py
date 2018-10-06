@@ -1,11 +1,11 @@
 class PPU:
-    def __init__(self): 
+    def __init__(self):
         # REGISTERS
 
         # $2000: PPUCTRL
         nametable_flag = 0          # On two bits! 0:$2000, 1:$2400, 2:$2800, 3:$2C00
         increment_flag = 0          # 0: add 1 (going accross), 1: add 32 (going down)
-        sprite_table_flag = 0       # 0: $0000, 1:1000; ignored in 8x16 
+        sprite_table_flag = 0       # 0: $0000, 1:1000; ignored in 8x16
         background_table_flag = 0   # 0: $0000, 1: $1000
         sprite_size_flag = 0        # 0: 8x8, 1: 16x16
         master_slave_flag = 0       # 0: read from EXT, 1: write to EXT

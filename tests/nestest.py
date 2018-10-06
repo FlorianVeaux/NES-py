@@ -1,12 +1,19 @@
 import numpy as np
-from cpu import CPU
-from memory import Memory
+from nes.cpu import CPU
+from nes.memory import Memory
 import pdb
-if __name__ == "__main__":
+import os
+
+def _abs_path(path):
+    _dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(_dir, path)
+
+def test_cpu():
+    """Tests CPU againsts a benchmark."""
     ms6502 = CPU()
 
-    benchmark = open('benchmark.txt')
-    f = open('nestest.nes', 'rb')
+    benchmark = open(_abs_path('benchmark.txt'))
+    f = open(_abs_path('nestest.nes'), 'rb')
     data = np.zeros(24592, dtype='uint8')
     i = 0
     b = f.read(1)

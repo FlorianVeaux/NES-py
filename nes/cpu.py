@@ -1,6 +1,7 @@
 from enum import IntEnum
-from memory import Memory
+from nes.memory import Memory
 import pdb
+
 class InterruptType(IntEnum):
     interruptNone = 1
     interruptNMI = 2
@@ -194,7 +195,7 @@ class CPU:
         #ENDOF PROCESSOR FLAGS
         self.instruction_table = [getattr(self, i) if hasattr(self, i) else None  for i in INSTRUCTION_NAMES]
         self.reset()
-    
+
     def read_uint8(self, address):
         """Reads a byte from the memory at the given address
         """
@@ -343,7 +344,7 @@ class CPU:
                 self.read_uint8((args[0] + self.Y) & 0xFF)
             )
         return s
-      
+
 
     def step(self, debug=False):
         opcode = self.read_uint8(self.pc)
@@ -361,10 +362,10 @@ class CPU:
                 'P': 'P:{0:02X}'.format(self.getFlags()),
                 'SP': 'SP:{0:02X}'.format(self.sp)
             }
-        
+
         page_crossed = False # Set to true when an underlying addition between a uint16 and a uint8 carries to the high byte
         self.step_cycles = 0
-        
+
         if mode == AddressingMode.modeAbsolute:
             arg = self.read_uint16(self.pc + 1)
         elif mode == AddressingMode.modeAbsoluteX:
@@ -425,7 +426,7 @@ class CPU:
 
         if page_crossed:
             self.step_cycles += INSTRUCTION_PAGE_CYCLES[opcode]
-        
+
         rval = self.execute_instruction(opcode, arg, mode)
         if debug:
             debug_data['cycles'] = self.step_cycles 
@@ -433,10 +434,10 @@ class CPU:
                 debug_data['mneumonic'] = debug_data['mneumonic'].replace("RESULT", rval)
             return debug_data
         return
-        
+
     def execute_instruction(self, opcode, address, mode):
         return self.instruction_table[opcode](address, mode)
-    
+
     @staticmethod
     def pagesDiffer(a1, a2):
         return 0xFF00 & a1 != 0xFF00 & a2
