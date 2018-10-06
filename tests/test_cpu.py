@@ -1,6 +1,5 @@
 import numpy as np
-from nes.cpu import CPU
-from nes.memory import Memory
+from nes.console import Console
 import pdb
 import os
 
@@ -10,7 +9,8 @@ def _abs_path(path):
 
 def test_cpu():
     """Tests CPU againsts a benchmark."""
-    ms6502 = CPU()
+    console = Console.create()
+    ms6502 = console.cpu
 
     benchmark = open(_abs_path('benchmark.txt'))
     f = open(_abs_path('nestest.nes'), 'rb')
@@ -22,15 +22,15 @@ def test_cpu():
         i = i+1
         b = f.read(1)
     ms6502.memory.load_ROM(0xbff0, data)
-    ms6502.memory.store(0x0180, 0x33)
-    ms6502.memory.store(0x017F, 0x69)
-    ms6502.memory.store(0xA9A9, 0xA9)
+    ms6502.memory.write(0x0180, 0x33)
+    ms6502.memory.write(0x017F, 0x69)
+    ms6502.memory.write(0xA9A9, 0xA9)
 
-    ms6502.memory.store(0x4004, 0xFF)
-    ms6502.memory.store(0x4005, 0xFF)
-    ms6502.memory.store(0x4006, 0xFF)
-    ms6502.memory.store(0x4007, 0xFF)
-    ms6502.memory.store(0x4015, 0xFF)
+    ms6502.memory.write(0x4004, 0xFF)
+    ms6502.memory.write(0x4005, 0xFF)
+    ms6502.memory.write(0x4006, 0xFF)
+    ms6502.memory.write(0x4007, 0xFF)
+    ms6502.memory.write(0x4015, 0xFF)
     ms6502.pc = 0xC000
     total_cycles = 0
     nb_fails = 0

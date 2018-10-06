@@ -1,5 +1,5 @@
 from enum import IntEnum
-from nes.memory import Memory
+from nes.memory import CPUMemory
 import pdb
 
 class InterruptType(IntEnum):
@@ -173,9 +173,8 @@ INSTRUCTION_IS_VALID = [
 ]
 
 class CPU:
-
-    def __init__(self):
-        self.memory = Memory.create()
+    def __init__(self, console):
+        self.memory = CPUMemory(console)
         self.total_cycles = 0
         self.step_cycles = 0
         self.pc = 0 # Program counter
@@ -200,23 +199,23 @@ class CPU:
         """Reads a byte from the memory at the given address
         """
 
-        return int(self.memory.fetch(address))
+        return int(self.memory.read(address))
 
     def read_uint16_bug(self, address):
         """Reads an uint16 from the memory
         """
         a = address
         b = (a & 0xFF00) | ((a+1) & 0x00FF)
-        lo = self.memory.fetch(a)
-        hi = self.memory.fetch(b)
+        lo = self.memory.read(a)
+        hi = self.memory.read(b)
         return int(hi << 8 | lo)
 
     def read_uint16(self, address):
         """Reads an uint16 from the memory the buggy way because the processor does not work correctly
         """
 
-        lo = self.memory.fetch(address)
-        hi = self.memory.fetch(address + 1)
+        lo = self.memory.read(address)
+        hi = self.memory.read(address + 1)
         return int(hi << 8 | lo)
 
     def push_uint8(self, val):
@@ -224,7 +223,7 @@ class CPU:
         """
 
         stack_ad = self.memory.get_stack_address(self.sp)
-        self.memory.store(stack_ad, val)
+        self.memory.write(stack_ad, val)
         self.sp = self.sp - 1
 
     def push_uint16(self, val):
@@ -238,7 +237,7 @@ class CPU:
     def pop_uint8(self):
         self.sp = self.sp + 1
         stack_ad = self.memory.get_stack_address(self.sp)
-        return int(self.memory.fetch(stack_ad))
+        return int(self.memory.read(stack_ad))
 
     def pop_uint16(self):
         """Pops two bytes as one number from the stack"""
@@ -480,7 +479,7 @@ class CPU:
             self.C = (value >> 7) & 1
             value = (value << 1) & 0xFF
             self.set_ZN(value)
-            self.memory.store(address, value)
+            self.memory.write(address, value)
 
     def BCC(self, address, mode):
         if(not self.C):
@@ -579,7 +578,7 @@ class CPU:
     
     def DEC(self, address, mode):
         new_val = (self.read_uint8(address) - 1) & 0xFF
-        self.memory.store(address, new_val)
+        self.memory.write(address, new_val)
         self.set_ZN(new_val)
 
     def DEX(self, address, mode):
@@ -598,7 +597,7 @@ class CPU:
 
     def INC(self, address, mode):
         new_val = (self.read_uint8(address) + 1) & 0xFF
-        self.memory.store(address, new_val)
+        self.memory.write(address, new_val)
         self.set_ZN(new_val)
 
     def INX(self, address, mode):
@@ -649,7 +648,7 @@ class CPU:
             value = self.read_uint8(address)
             self.C = value & 1
             value = value >> 1
-            self.memory.store(address, value)
+            self.memory.write(address, value)
             self.set_ZN(value)
 
     def NOP(self, address, mode):
@@ -691,7 +690,7 @@ class CPU:
             hi_a = (value & 0b10000000) >> 7
             value = ((value << 1) & 0xFF) | (self.C)
             self.C = hi_a
-            self.memory.store(address, value)
+            self.memory.write(address, value)
             self.set_ZN(value)
 
     def ROR(self, address, mode):
@@ -705,7 +704,7 @@ class CPU:
             lo_a = value & 1
             value = (value >> 1) | (self.C << 7)
             self.C = lo_a
-            self.memory.store(address, value)
+            self.memory.write(address, value)
             self.set_ZN(value)
 
     def RRA(self, address, mode):
@@ -722,7 +721,7 @@ class CPU:
         self.pc = self.pop_uint16() + 1
 
     def SAX(self, address, mode):
-        return '{0:02X}'.format(self.memory.store(address, self.A & self.X))
+        return '{0:02X}'.format(self.memory.write(address, self.A & self.X))
     
     def SBC(self, address, mode):
         a = int(self.A)
@@ -759,13 +758,13 @@ class CPU:
         return '{0:02X}'.format(old_val)
     
     def STA(self, address, mode):
-        return '{0:02X}'.format(self.memory.store(address, self.A))
+        return '{0:02X}'.format(self.memory.write(address, self.A))
 
     def STX(self, address, mode):
-        self.memory.store(address, self.X)
+        self.memory.write(address, self.X)
 
     def STY(self, address, mode):
-        self.memory.store(address, self.Y)
+        self.memory.write(address, self.Y)
 
     def TAX(self, address, mode):
         self.X = self.A
