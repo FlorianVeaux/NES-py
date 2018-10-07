@@ -1,0 +1,72 @@
+import numpy as np
+from collections import namedtuple
+
+
+PRG_ROM_UNIT = 0x4000
+CHR_ROM_UNIT = 0x2000
+PRG_RAM_UNIT = 0x2000
+HEADER_SIZE = 16
+# This defines the NES format
+CONSTANT = [0x4e, 0x45, 0x53, 0x1a]
+
+
+INESHeader = namedtuple('INESHEADER', [
+    'prg_rom_size', 'chr_rom_size', 'f6', 'f7', 'prg_ram_size', 'f9', 'f10'
+])
+
+
+class NESParserError(Exception):
+    """Base error class"""
+
+
+def parse_nes_file(f):
+    """Takes an open file (as read bytes) and parses it according to
+    https://wiki.nesdev.com/w/index.php/INES.
+
+    Returns:
+        the PRG_ROM data,
+        the CHR_ROM data,
+        the PRG_RAM size,
+        the CHR_RAM size
+    """
+    _next = lambda: f.read(1)[0]
+
+    header = _extract_header(f)
+    prg_rom = _extract_chunk(f, header.prg_rom_size * PRG_ROM_UNIT)
+    chr_rom = _extract_chunk(f, header.chr_rom_size * CHR_ROM_UNIT)
+    # FIXME: This is for debug purposes. Alert if we missed some data
+    assert f.read(1) == b''
+    prg_ram_size = header.prg_ram_size * PRG_RAM_UNIT
+    # TODO: enable the use of CHR RAM
+    chr_ram_size = 0
+    return prg_rom, chr_rom, prg_ram_size, chr_ram_size
+
+
+def _extract_header(f):
+    _next = lambda: f.read(1)[0]
+    i = 0
+    h = np.zeros(HEADER_SIZE, dtype='uint8')
+    while i < len(CONSTANT):
+        b = _next()
+        h[i] = b
+        # Check that this is indeed a NES file
+        if i < len(CONSTANT) and b != CONSTANT[i]:
+            raise NESParserError('Not a NES file.')
+        i += 1
+
+    # A value 0 of prg_ram in fact means 1
+    h[8] = h[8] or 1
+    # Populate the header (minus the constant)
+    return INESHeader(
+        h[4], h[5], h[6], h[7], h[8], h[9], h[10]
+    )
+
+def _extract_chunk(f, size):
+    """Extracts size bytes from the file and returns the data as a
+    numpy array.
+    """
+    _next = lambda: f.read(1)[0]
+    data = np.zeros(size, dtype='uint8')
+    for i in range(size):
+        data[i] = _next()
+    return data

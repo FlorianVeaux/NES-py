@@ -6,6 +6,11 @@ class Console:
         self.cpu = CPU(self)
         self.ppu = PPU(self)
 
+    def load_cartridge(self, cartridge):
+        """Binds a Cartridge object to the console.
+        """
+        self.cartridge = cartridge
+
     @staticmethod
     def create():
         return Console()

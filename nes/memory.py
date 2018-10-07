@@ -1,6 +1,14 @@
 import numpy as np
 import pdb
 
+class MemError(Exception):
+    """Base error class"""
+
+
+class CPUMemoryError(MemError):
+    """Raise on CPUMemory Error"""
+
+
 class CPUMemory(object):
     """CPU Memory structure:
         $0000
@@ -8,7 +16,10 @@ class CPUMemory(object):
         $2000
             Access to PPU I/O registers (8 of them, mirrored all accross)
         $4000
-            ??? (at least access to some OAM related I/O)
+            $4014 ppu OAMDMA register
+            $4016 left joystick
+            $4017 right joystick
+            ??? (other stuff maybe?)
         $5000
             Expansion modules
         $6000
@@ -29,17 +40,21 @@ class CPUMemory(object):
         self._memory = np.zeros(CPUMemory.MEM_SIZE, dtype='uint8')
 
     def read(self, address):
-        # TODO: shouldn't it be 'if address < 0x2000' ? see docstring
         if 0x800 <= address < 0x2000:
-            print("Hello")
-            print(address)
+            # 2kb, mirrored 4 times
+            return self._memory[address % 0x800]
             address %= 0x800
         elif address < 0x4000:
             # PPU registers are mirrored every 8 bytes
             # e.g. address 0x3210 => 0x3210 % 8 = 0 => read 0x2000
-            self._console.ppu.read_register(0x2000 + address % 8)
-
-        return self._memory[address]
+            return self._console.ppu.read_register(0x2000 + address % 8)
+        elif address < 0x10000:
+            # TODO: implement
+            raise NotImplementedError(
+                'Read not implemented at address={}'.format(hex(address))
+            )
+        else:
+            raise CPUMemoryError('Unknown address: {}'.format(hex(address)))
 
     def write(self, address, value):
         if 0x800 <= address < 0x2000:
