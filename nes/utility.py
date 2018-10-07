@@ -1,5 +1,8 @@
 import numpy as np
 from collections import namedtuple
+import logging
+
+log = logging.getLogger('nes.' + __name__)
 
 
 PRG_ROM_UNIT = 0x4000
@@ -24,6 +27,7 @@ def parse_nes_file(f):
     https://wiki.nesdev.com/w/index.php/INES.
 
     Returns:
+        the mapper number,
         the PRG_ROM data,
         the CHR_ROM data,
         the PRG_RAM size,
@@ -32,6 +36,7 @@ def parse_nes_file(f):
     _next = lambda: f.read(1)[0]
 
     header = _extract_header(f)
+    log.debug(header)
     prg_rom = _extract_chunk(f, header.prg_rom_size * PRG_ROM_UNIT)
     chr_rom = _extract_chunk(f, header.chr_rom_size * CHR_ROM_UNIT)
     # FIXME: This is for debug purposes. Alert if we missed some data
@@ -39,20 +44,19 @@ def parse_nes_file(f):
     prg_ram_size = header.prg_ram_size * PRG_RAM_UNIT
     # TODO: enable the use of CHR RAM
     chr_ram_size = 0
-    return prg_rom, chr_rom, prg_ram_size, chr_ram_size
+    return _mapper_number(header), prg_rom, chr_rom, prg_ram_size, chr_ram_size
 
 
 def _extract_header(f):
     _next = lambda: f.read(1)[0]
     i = 0
     h = np.zeros(HEADER_SIZE, dtype='uint8')
-    while i < len(CONSTANT):
+    for i in range(HEADER_SIZE):
         b = _next()
         h[i] = b
         # Check that this is indeed a NES file
         if i < len(CONSTANT) and b != CONSTANT[i]:
             raise NESParserError('Not a NES file.')
-        i += 1
 
     # A value 0 of prg_ram in fact means 1
     h[8] = h[8] or 1
@@ -65,8 +69,15 @@ def _extract_chunk(f, size):
     """Extracts size bytes from the file and returns the data as a
     numpy array.
     """
+    log.debug('Extracting chunk of size %s', size)
     _next = lambda: f.read(1)[0]
     data = np.zeros(size, dtype='uint8')
     for i in range(size):
         data[i] = _next()
     return data
+
+def _mapper_number(header):
+    """Returns the mapper number. See
+    https://wiki.nesdev.com/w/index.php/Mapper."""
+    # TODO: Add support for more than the 255 mappers encoded on flag6
+    return header.f6 >> 4

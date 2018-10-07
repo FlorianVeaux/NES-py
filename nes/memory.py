@@ -16,9 +16,11 @@ class CPUMemory(object):
         $2000
             Access to PPU I/O registers (8 of them, mirrored all accross)
         $4000
+            $4000 - $4013: APU register
             $4014 ppu OAMDMA register
-            $4016 left joystick
-            $4017 right joystick
+            $4015 APU register
+            $4016 left joystick (this demands source checking...)
+            $4017 right joystick (also APU??)
             ??? (other stuff maybe?)
         $5000
             Expansion modules
@@ -40,19 +42,25 @@ class CPUMemory(object):
         self._memory = np.zeros(CPUMemory.MEM_SIZE, dtype='uint8')
 
     def read(self, address):
-        if 0x800 <= address < 0x2000:
+        if address < 0x2000:
             # 2kb, mirrored 4 times
             return self._memory[address % 0x800]
-            address %= 0x800
         elif address < 0x4000:
             # PPU registers are mirrored every 8 bytes
             # e.g. address 0x3210 => 0x3210 % 8 = 0 => read 0x2000
             return self._console.ppu.read_register(0x2000 + address % 8)
-        elif address < 0x10000:
+        elif address < 0x5000:
             # TODO: implement
             raise NotImplementedError(
                 'Read not implemented at address={}'.format(hex(address))
             )
+        elif address < 0x6000:
+            # TODO: implement expansion modules
+            raise NotImplementedError(
+                'Read not implemented at address={}'.format(hex(address))
+            )
+        elif address < 0x10000:
+            return self._console.mapper.read_prg(address)
         else:
             raise CPUMemoryError('Unknown address: {}'.format(hex(address)))
 

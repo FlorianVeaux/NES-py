@@ -1,5 +1,6 @@
 import numpy as np
 from nes.console import Console
+from nes.mapper import Mapper
 import pdb
 import os
 
@@ -11,17 +12,10 @@ def test_cpu():
     """Tests CPU againsts a benchmark."""
     console = Console.create()
     ms6502 = console.cpu
+    mapper = Mapper.from_nes_file(_abs_path('nestest.nes'))
+    console.load_cartridge(mapper)
 
     benchmark = open(_abs_path('benchmark.txt'))
-    f = open(_abs_path('nestest.nes'), 'rb')
-    data = np.zeros(24592, dtype='uint8')
-    i = 0
-    b = f.read(1)
-    while b != b'':
-        data[i] = b[0]
-        i = i+1
-        b = f.read(1)
-    ms6502.memory.load_ROM(0xbff0, data)
     ms6502.memory.write(0x0180, 0x33)
     ms6502.memory.write(0x017F, 0x69)
     ms6502.memory.write(0xA9A9, 0xA9)
@@ -51,7 +45,8 @@ def test_cpu():
 
         benchmark_line = benchmark.readline()[:81]
         if(string == benchmark_line):
-            print(string)
+            pass
+            # print(string)
         else:
             print("CPU:      " + string)
             print("Expected: " + benchmark_line)

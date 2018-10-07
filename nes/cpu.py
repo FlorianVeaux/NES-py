@@ -193,7 +193,6 @@ class CPU:
         self.N = False  # Negative flag
         #ENDOF PROCESSOR FLAGS
         self.instruction_table = [getattr(self, i) if hasattr(self, i) else None  for i in INSTRUCTION_NAMES]
-        self.reset()
 
     def read_uint8(self, address):
         """Reads a byte from the memory at the given address
@@ -721,7 +720,10 @@ class CPU:
         self.pc = self.pop_uint16() + 1
 
     def SAX(self, address, mode):
-        return '{0:02X}'.format(self.memory.write(address, self.A & self.X))
+        # TODO: Check if correct (write does not return old value anymore)
+        old_val = self.memory.read(address)
+        self.memory.write(address, self.A & self.X)
+        return '{0:02X}'.format(old_val)
     
     def SBC(self, address, mode):
         a = int(self.A)
@@ -758,7 +760,10 @@ class CPU:
         return '{0:02X}'.format(old_val)
     
     def STA(self, address, mode):
-        return '{0:02X}'.format(self.memory.write(address, self.A))
+        # TODO: Check if correct
+        old_val = self.read_uint8(address)
+        self.memory.write(address, self.A)
+        return '{0:02X}'.format(old_val)
 
     def STX(self, address, mode):
         self.memory.write(address, self.X)
