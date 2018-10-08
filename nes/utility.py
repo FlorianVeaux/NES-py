@@ -27,7 +27,7 @@ def parse_nes_file(f):
     https://wiki.nesdev.com/w/index.php/INES.
 
     Returns:
-        the mapper number,
+        some header metadata,
         the PRG_ROM data,
         the CHR_ROM data,
         the PRG_RAM size,
@@ -44,7 +44,12 @@ def parse_nes_file(f):
     prg_ram_size = header.prg_ram_size * PRG_RAM_UNIT
     # TODO: enable the use of CHR RAM
     chr_ram_size = 0
-    return _mapper_number(header), prg_rom, chr_rom, prg_ram_size, chr_ram_size
+    # Useful header data
+    header_data = {
+        'mapper_id': _mapper_id(header),
+        'mirror_id': _mirror_id(header)
+    }
+    return header_data, prg_rom, chr_rom, prg_ram_size, chr_ram_size
 
 
 def _extract_header(f):
@@ -76,8 +81,13 @@ def _extract_chunk(f, size):
         data[i] = _next()
     return data
 
-def _mapper_number(header):
+def _mapper_id(header):
     """Returns the mapper number. See
     https://wiki.nesdev.com/w/index.php/Mapper."""
     # TODO: Add support for more than the 255 mappers encoded on flag6
     return header.f6 >> 4
+
+def _mirror_id(header):
+    """Determines the mirroring number."""
+    # TODO: Add support for more mirroring options.
+    return header.f6 & 1

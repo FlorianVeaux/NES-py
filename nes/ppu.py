@@ -2,7 +2,7 @@ class PPUError(Exception):
     """Base error class"""
 
 
-class PPURegisterError(Exception):
+class PPURegisterError(PPUError):
     """Raise on Register error"""
     def __init__(self, message, register):
         message = '({0}) {1}'.format(register.__class__.__name__, message)
@@ -13,7 +13,7 @@ class Register:
     def read(self):
         raise PPURegisterError('Read is not supported.', self)
 
-    def write(self, address, value):
+    def write(self, value):
         raise PPURegisterError('Write is not supported.', self)
 
 

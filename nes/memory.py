@@ -1,12 +1,17 @@
 import numpy as np
 import pdb
 
+from nes.mirror import mirrored_address
+
+
 class MemError(Exception):
     """Base error class"""
 
-
 class CPUMemoryError(MemError):
     """Raise on CPUMemory Error"""
+
+class PPUMemoryError(MemError):
+    """Raise on PPUMemory Error"""
 
 
 class CPUMemory(object):
@@ -32,19 +37,19 @@ class CPUMemory(object):
             PRG ROM (upper)
         $10000
     """
-    MEM_SIZE = 65536
+    RAM_SIZE = 0x0800
 
     def __init__(self, console):
-        self._memory = np.zeros(CPUMemory.MEM_SIZE, dtype='uint8')
+        self._RAM = np.zeros(CPUMemory.RAM_SIZE, dtype='uint8')
         self._console = console
 
     def reset(self):
-        self._memory = np.zeros(CPUMemory.MEM_SIZE, dtype='uint8')
+        self._RAM = np.zeros(CPUMemory.RAM_SIZE, dtype='uint8')
 
     def read(self, address):
         if address < 0x2000:
             # 2kb, mirrored 4 times
-            return self._memory[address % 0x800]
+            return self._RAM[address % 0x800]
         elif address < 0x4000:
             # PPU registers are mirrored every 8 bytes
             # e.g. address 0x3210 => 0x3210 % 8 = 0 => read 0x2000
@@ -65,16 +70,56 @@ class CPUMemory(object):
             raise CPUMemoryError('Unknown address: {}'.format(hex(address)))
 
     def write(self, address, value):
-        if 0x800 <= address < 0x2000:
-            address %= 0x800
-        self._memory[address] = value
-
-    def load_ROM(self, initAddress, values):
-        endAddress = min(initAddress+values.size, self.MEM_SIZE)
-        self._memory[initAddress:endAddress] = values[0:endAddress - initAddress]
+        if address < 0x2000:
+            self._RAM[address % 0x800] = value
+        else:
+            # TODO: implement various writes
+            raise NotImplementedError(
+                'CPU write not implemented at address={}'.format(hex(address))
+            )
 
     @staticmethod
     def get_stack_address(address):
         return 0x1A0 | address
 
 
+class PPUMemory:
+    """PPU Memory structure:
+    $0000
+        Pattern table (256 * 8 * 2) * 2 (In cartridge)
+    $2000
+        (Name table (30 * 32) + Attribut table (64)) * 4
+    $3000
+        Empty
+    $3F00
+        Image Palette
+    $3F10
+        Sprite Palette
+    $3F20
+        Empty
+    $4000
+    """
+    # Includes both sprite and image palette
+    PALETTE_SIZE = 0x0020
+    NAME_TABLE_SIZE = 0x1000
+
+    def __init__(self, console):
+        self._console =  console
+        self._palette = np.zeros(PPUMemory._PALETTE_SIZE, dtype='uint8')
+        self._name_table = np.zeros(PPUMemory.NAME_TABLE_SIZE, dtype='uint8')
+
+    def read(self, address):
+        if address < 0x2000:
+            return self._console.mapper.read_chr(address)
+        elif address < 0x3000:
+            mirroring = self._console.mapper.mirror_id
+            return self._name_table[mirrored_address(address, mirroring) - 0x2000]
+        elif 0x3F00 <= address < 0x3F20:
+            return self._palette[address - 0x3F00]
+        else:
+            raise PPUMemoryError('Unknown address: {}'.format(hex(address)))
+
+    def write(self, address, value):
+        raise NotImplementedError(
+            'PPU write not implemented at address={}'.format(hex(address))
+        )
