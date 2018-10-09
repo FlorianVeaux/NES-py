@@ -55,10 +55,7 @@ class CPUMemory(object):
             # e.g. address 0x3210 => 0x3210 % 8 = 0 => read 0x2000
             return self._console.ppu.read_register(0x2000 + address % 8)
         elif address <= 0x4FFF:
-            # TODO: implement
-            raise NotImplementedError(
-                'Read not implemented at address={}'.format(hex(address))
-            )
+            return self._console.apu.read_register(address)
         elif address <= 0x5FFFF:
             # TODO: implement expansion modules
             raise NotImplementedError(
@@ -141,7 +138,7 @@ class PPUMemory:
 
     def __init__(self, console):
         self._console =  console
-        self._palette = np.zeros(PPUMemory._PALETTE_SIZE, dtype='uint8')
+        self._palette = np.zeros(PPUMemory.PALETTE_SIZE, dtype='uint8')
         self._name_table = np.zeros(PPUMemory.NAME_TABLE_SIZE, dtype='uint8')
 
     def read(self, address):

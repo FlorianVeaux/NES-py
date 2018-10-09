@@ -18,7 +18,7 @@ class Mapper:
     def write_prg(self, address, value):
         raise NotImplementedError
 
-    def read_chr(address):
+    def read_chr(self, address):
         raise NotImplementedError
 
     def write_chr(self, address, value):
