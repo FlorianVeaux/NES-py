@@ -110,7 +110,7 @@ class PPU:
         else:
             raise PPUError('Unknown register of address={}'.format(address))
 
-    def write_to_register(self, address, value):
+    def write_register(self, address, value):
         """CPU and PPU communicate through the PPU's registers.
         """
         if address == 0x2000:

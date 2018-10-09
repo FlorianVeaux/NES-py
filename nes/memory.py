@@ -72,11 +72,24 @@ class CPUMemory(object):
     def write(self, address, value):
         if address < 0x2000:
             self._RAM[address % 0x800] = value
-        else:
-            # TODO: implement various writes
+        elif address < 0x4000:
+            # PPU registers are mirrored every 8 bytes
+            # e.g. address 0x3210 => 0x3210 % 8 = 0 => write 0x2000
+            self._console.ppu.write_register(0x2000 + address % 8, value)
+        elif address < 0x5000:
+            # TODO: implement
             raise NotImplementedError(
-                'CPU write not implemented at address={}'.format(hex(address))
+                'Read not implemented at address={}'.format(hex(address))
             )
+        elif address < 0x6000:
+            # TODO: implement expansion modules
+            raise NotImplementedError(
+                'Read not implemented at address={}'.format(hex(address))
+            )
+        elif address < 0x10000:
+            self._console.mapper.write_prg(address, value)
+        else:
+            raise CPUMemoryError('Unknown address: {}'.format(hex(address)))
 
     @staticmethod
     def get_stack_address(address):
@@ -123,3 +136,12 @@ class PPUMemory:
         raise NotImplementedError(
             'PPU write not implemented at address={}'.format(hex(address))
         )
+        if address < 0x2000:
+            self._console.mapper.write_chr(address, value)
+        elif address < 0x3000:
+            mirroring = self._console.mapper.mirror_id
+            self._name_table[mirrored_address(address, mirroring) - 0x2000] = value
+        elif 0x3F00 <= address < 0x3F20:
+            self._palette[address - 0x3F00] = value
+        else:
+            raise PPUMemoryError('Unknown address: {}'.format(hex(address)))
