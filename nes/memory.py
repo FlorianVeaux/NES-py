@@ -56,7 +56,7 @@ class CPUMemory(object):
             return self._console.ppu.read_register(0x2000 + address % 8)
         elif address <= 0x4FFF:
             return self._console.apu.read_register(address)
-        elif address <= 0x5FFFF:
+        elif address <= 0x5FFF:
             # TODO: implement expansion modules
             raise NotImplementedError(
                 'Read not implemented at address={}'.format(hex(address))
@@ -97,10 +97,7 @@ class CPUMemory(object):
             # e.g. address 0x3210 => 0x3210 % 8 = 0 => write 0x2000
             self._console.ppu.write_register(0x2000 + address % 8, value)
         elif address < 0x5000:
-            # TODO: implement
-            raise NotImplementedError(
-                'Read not implemented at address={}'.format(hex(address))
-            )
+            self._console.apu.write_register(address, value)
         elif address < 0x6000:
             # TODO: implement expansion modules
             raise NotImplementedError(

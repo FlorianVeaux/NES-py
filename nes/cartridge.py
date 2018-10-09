@@ -45,3 +45,9 @@ class Cartridge:
         except IndexError:
             raise CartridgeError('Trying to read PRG_RAM at {}'.format(hex(address)))
 
+    def write_prg_ram(self, address, value):
+        try:
+            self.PRG_RAM[address] = value
+        except IndexError:
+            raise CartridgeError("Trying to write PRG_RAM at {}".format(hex(address)))
+

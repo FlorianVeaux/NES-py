@@ -59,6 +59,12 @@ class NROMMapper(Mapper):
                 return self._cartridge.read_prg_rom(pointer % 0x4000)
             return self._cartridge.read_prg_rom(pointer)
 
+    def write_prg(self, address, value):
+        if 0x6000 <= address < 0x8000:
+            self._cartridge.write_prg_ram(address - 0x6000)
+        else:
+            raise NotImplementedError("Trying to write prg at {}".format(hex(address)))
+
     def read_chr(self, address):
         return self._cartridge.read_chr_ram(address)
 

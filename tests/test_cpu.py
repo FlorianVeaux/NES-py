@@ -18,7 +18,7 @@ def test_cpu():
     benchmark = open(_abs_path('benchmark.txt'))
     ms6502.memory.write(0x0180, 0x33)
     ms6502.memory.write(0x017F, 0x69)
-    ms6502.memory.write(0xA9A9, 0xA9)
+    #ms6502.memory.write(0xA9A9, 0xA9)
 
     ms6502.memory.write(0x4004, 0xFF)
     ms6502.memory.write(0x4005, 0xFF)
@@ -44,13 +44,11 @@ def test_cpu():
         total_cycles += 3*int(debug_data['cycles'])
 
         benchmark_line = benchmark.readline()[:81]
-        if(string == benchmark_line):
-            pass
-            # print(string)
-        else:
+        if(string != benchmark_line):
             print("CPU:      " + string)
             print("Expected: " + benchmark_line)
             nb_fails += 1
-            if nb_fails == -1:
-                pdb.set_trace()
+            if nb_fails == 1:
                 exit(0)
+        else:
+            print(string)

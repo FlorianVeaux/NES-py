@@ -407,7 +407,6 @@ class CPU:
         elif mode == AddressingMode.modeIndirect:
             # Same bug
             arg = self.read_uint16_bug(self.read_uint16(self.pc + 1))
-            print(hex(arg))
         elif mode == AddressingMode.modeIndirectIndexed:
             # Same bug
             arg = (self.read_uint16_bug(self.read_uint8(self.pc + 1)) + self.Y) & 0xFFFF
@@ -438,7 +437,7 @@ class CPU:
 
         rval = self.execute_instruction(opcode, arg, mode)
         if debug:
-            debug_data['cycles'] = self.step_cycles 
+            debug_data['cycles'] = self.step_cycles
             if rval is not None:
                 debug_data['mneumonic'] = debug_data['mneumonic'].replace("RESULT", rval)
             return debug_data
@@ -609,7 +608,7 @@ class CPU:
         self.DEC(address, mode)
         self.CMP(address, mode)
         return '{0:02X}'.format(old_val)
-    
+
     def DEC(self, address, mode):
         new_val = (self.read_uint8(address) - 1) & 0xFF
         self.memory.write(address, new_val)
@@ -647,7 +646,7 @@ class CPU:
         self.INC(address, mode)
         self.SBC(address, mode)
         return '{0:02X}'.format(old_val)
-    
+
     def JMP(self, address, mode):
         self.pc = address
 
@@ -659,7 +658,7 @@ class CPU:
         self.LDA(address, mode)
         self.LDX(address, mode)
         return '{0:02X}'.format(self.A)
-    
+
     def LDA(self, address, mode):
         self.A = self.read_uint8(address)
         self.set_ZN(self.A)
@@ -712,7 +711,7 @@ class CPU:
         self.ROL(address, mode)
         self.AND(address, mode)
         return '{0:02X}'.format(old_val)
-    
+
     def ROL(self, address, mode):
         if mode == AddressingMode.modeAccumulator:
             hi_a = (self.A & 0b10000000) >> 7
@@ -746,7 +745,7 @@ class CPU:
         self.ROR(address, mode)
         self.ADC(address, mode)
         return '{0:02X}'.format(old_val)
-    
+
     def RTI(self, address, mode):
         self.setFlags(self.pop_uint8())
         self.pc = self.pop_uint16()
@@ -759,7 +758,7 @@ class CPU:
         old_val = self.memory.read(address)
         self.memory.write(address, self.A & self.X)
         return '{0:02X}'.format(old_val)
-    
+
     def SBC(self, address, mode):
         a = int(self.A)
         b = int(self.read_uint8(address))
@@ -787,13 +786,13 @@ class CPU:
         self.EOR(address, mode)
         return '{0:02X}'.format(old_val)
 
-    
+
     def SLO(self, address, mode):
         old_val = self.read_uint8(address)
         self.ASL(address, mode)
         self.ORA(address, mode)
         return '{0:02X}'.format(old_val)
-    
+
     def STA(self, address, mode):
         # TODO: Check if correct
         old_val = self.read_uint8(address)
