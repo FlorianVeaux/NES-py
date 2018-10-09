@@ -68,6 +68,12 @@ class PPUDATA(Register):
 
 
 class PPU:
+    # Constants
+    CLOCK_CYCLE = 341
+    VISIBLE_CLOCK_CYCLE = 256
+    PRE_RENDER_SCAN_LINE = 261
+    POST_RENDER_SCAN_LINE = 240
+
     def __init__(self, console):
         # REGISTERS
         # $2000: PPUCTRL
@@ -87,6 +93,113 @@ class PPU:
         # $2007: PPUDATA
         self.PPUDATA = PPUDATA()
 
+        # RENDERING
+        self.clock = 0
+        self.scan_line = 0
+        self.is_even_screen = True
+
+        # BACKGROUND TEMP VARS
+        self.name_table_byte = 0
+        self.attribute_table_byte = 0
+        self.lower_tile_byte = 0
+        self.higher_tile_byte = 0
+        self.loaded_data = 0 # 32 bits!
+
+    def tick(self):
+        self.clock += 1
+        if self.clock == PPU.CLOCK_CYCLE:
+            self.clock = 0
+            self.scan_line += 1
+            if self.scan_line == PPU.PRE_RENDER_SCAN_LINE:
+                self.scan_line = 0
+                self.is_even_screen = not self.is_even_screen
+
+
+    def render_pixel(self):
+        raise NotImplementedError
+
+    def increment_horizontal_scroll(self):
+        raise NotImplementedError
+
+    def increment_vertical_scroll(self):
+        raise NotImplementedError
+
+    def copy_horizontal_scroll(self):
+        raise NotImplementedError
+
+    def copy_vertical_scroll(self):
+        raise NotImplementedError
+
+    def load_background_data(self):
+        raise NotImplementedError
+
+    def fetch_name_table_byte(self):
+        raise NotImplementedError
+
+    def fetch_attribute_table_byte(self):
+        raise NotImplementedError
+
+    def fetch_lower_tile_byte(self):
+        raise NotImplementedError
+
+    def fetch_higher_tile_byte(self):
+        raise NotImplementedError
+
+    def step(self):
+        self.tick()
+        rendering_enabled = self.PPUMASK.background_flag or self.PPUMASK.sprite_flag
+        is_visible_clock = 1 <= self.clock <= 256
+        is_visible_line = self.scan_line < PPU.POST_RENDER_SCAN_LINE
+        is_prerender_line = self.scan_line == PPU.PRE_RENDER_SCAN_LINE
+        is_postrender_line = self.scan_line == PPU.POST_RENDER_SCAN_LINE
+        is_fetch_line = is_visible_line or is_prerender_line
+        is_fetch_clock = is_visible_clock or 321 <= self.clock <= 336
+
+        if rendering_enabled:
+            if is_visible_line and is_visible_clock:
+                self.render_pixel()
+
+            if is_fetch_line:
+                if is_fetch_clock:
+                    # LINES: 0 - 239, 261; CLOCK: 1 - 256, 321 - 336
+                    switch = self.clock % 8
+                    # Make sure that we have 8 new bits every 2 ticks:
+                    loaded_data >> 4
+                    if switch == 0:
+                        self.increment_horizontal_scroll()
+                        # load some new data
+                        self.load_background_data()
+                    if switch == 1:
+                        self.fetch_name_table_byte()
+                    elif switch == 3:
+                        self.fetch_attribute_table_byte()
+                    elif switch == 5:
+                        self.fetch_lower_tile_byte()
+                    elif switch == 7:
+                        self.fetch_higher_tile_byte()
+
+                if self.clock == 256:
+                    self.increment_vertical_scroll()
+
+                if self.clock == 257:
+                    self.copy_horizontal_scroll()
+
+                # TODO: implement sprite logic
+                # TODO: implement 2 last cycle logic
+
+            if is_prerender_line:
+                if self.clock == 1:
+                    self.PPUSTATUS.vertical_blank_started_flag = 0
+                    self.PPUSTATUS.sprite_overflow_flag = 0
+                    self.PPUSTATUS.sprite_zero_flag = 0
+
+                # TODO: jump or not depending on frame parity
+
+                if 280 <= self.clock <= 304:
+                    self.copy_vertical_scroll()
+
+            if is_postrender_line and self.clock == 1:
+                self.PPUSTATUS.vertical_blank_started_flag = 1
 
     def read_register(self, address):
         """CPU and PPU communicate through the PPU's registers.
