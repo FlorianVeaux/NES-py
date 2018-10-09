@@ -47,27 +47,50 @@ class CPUMemory(object):
         self._RAM = np.zeros(CPUMemory.RAM_SIZE, dtype='uint8')
 
     def read(self, address):
-        if address < 0x2000:
+        if address <= 0x1FFF:
             # 2kb, mirrored 4 times
             return self._RAM[address % 0x800]
-        elif address < 0x4000:
+        elif address <= 0x3FFF:
             # PPU registers are mirrored every 8 bytes
             # e.g. address 0x3210 => 0x3210 % 8 = 0 => read 0x2000
             return self._console.ppu.read_register(0x2000 + address % 8)
-        elif address < 0x5000:
+        elif address <= 0x4FFF:
             # TODO: implement
             raise NotImplementedError(
                 'Read not implemented at address={}'.format(hex(address))
             )
-        elif address < 0x6000:
+        elif address <= 0x5FFFF:
             # TODO: implement expansion modules
             raise NotImplementedError(
                 'Read not implemented at address={}'.format(hex(address))
             )
-        elif address < 0x10000:
+        elif address <= 0xFFFF:
             return self._console.mapper.read_prg(address)
         else:
             raise CPUMemoryError('Unknown address: {}'.format(hex(address)))
+
+    def read_page(self, address):
+        if address <= 0x1F:
+            address_begin = (address % 0x800) << 8
+            address_end = address_begin | 0x00FF
+            return self._RAM[address:address_end]
+        elif address <= 0x3F:
+            raise NotImplementedError(
+                'You should not read a page of PPU registers'
+            )
+        elif address <= 0x4F:
+            raise NotImplementedError(
+                'You should not read a page at address={}'.format(hex(address))
+            )
+        elif address <= 0x5F:
+            raise NotImplementedError(
+                'You should not read a page at address={}'.format(hex(address))
+            )
+        elif address <= 0xFF:
+            raise NotImplementedError(
+                'We need a way to batch read from the cartdrige at address={}'.format(hex(address))
+            )
+
 
     def write(self, address, value):
         if address < 0x2000:

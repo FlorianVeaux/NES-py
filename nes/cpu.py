@@ -175,7 +175,6 @@ INSTRUCTION_IS_VALID = [
 class CPU:
     def __init__(self, console):
         self.memory = CPUMemory(console)
-        self.total_cycles = 0
         self.step_cycles = 0
         self.pc = 0 # Program counter
         self.sp = 0 # Stack Pointer
@@ -193,6 +192,8 @@ class CPU:
         self.N = False  # Negative flag
         #ENDOF PROCESSOR FLAGS
         self.instruction_table = [getattr(self, i) if hasattr(self, i) else None  for i in INSTRUCTION_NAMES]
+        self.wait_cycles = 0
+        self.interrupt_status = InterruptType.interruptNone
 
     def read_uint8(self, address):
         """Reads a byte from the memory at the given address
@@ -201,7 +202,7 @@ class CPU:
         return int(self.memory.read(address))
 
     def read_uint16_bug(self, address):
-        """Reads an uint16 from the memory
+        """Reads an uint16 from the memory the buggy way because the processor does not work correctly
         """
         a = address
         b = (a & 0xFF00) | ((a+1) & 0x00FF)
@@ -210,9 +211,8 @@ class CPU:
         return int(hi << 8 | lo)
 
     def read_uint16(self, address):
-        """Reads an uint16 from the memory the buggy way because the processor does not work correctly
+        """Reads an uint16 from the memory
         """
-
         lo = self.memory.read(address)
         hi = self.memory.read(address + 1)
         return int(hi << 8 | lo)
@@ -345,6 +345,18 @@ class CPU:
 
 
     def step(self, debug=False):
+        if self.wait_cycles > 0:
+            # This is used to simulate the CPU doing a copy operation to the PPU memory
+            self.wait_cycles -= 1
+            return 1
+
+        if self.interrupt_status == InterruptType.interruptNMI:
+            self.nmi()
+            return 0
+        elif self.interrupt_status == InterruptType.interruptIRQ:
+            self.irq()
+            return 0
+
         opcode = self.read_uint8(self.pc)
         mode = INSTRUCTION_MODES[opcode]
         if(debug):
@@ -398,7 +410,6 @@ class CPU:
             print(hex(arg))
         elif mode == AddressingMode.modeIndirectIndexed:
             # Same bug
-
             arg = (self.read_uint16_bug(self.read_uint8(self.pc + 1)) + self.Y) & 0xFFFF
             page_crossed = self.pagesDiffer(arg - self.Y, arg)
         elif mode == AddressingMode.modeRelative:
@@ -431,7 +442,7 @@ class CPU:
             if rval is not None:
                 debug_data['mneumonic'] = debug_data['mneumonic'].replace("RESULT", rval)
             return debug_data
-        return
+        return self.step_cycles
 
     def execute_instruction(self, opcode, address, mode):
         return self.instruction_table[opcode](address, mode)
@@ -451,6 +462,30 @@ class CPU:
     def set_ZN(self, val):
         self.set_Z(val)
         self.set_N(val)
+
+    def triggerNMI(self):
+        # self.I -> 0: /IRQ and /NMI get through; 1: only /NMI gets through)
+        self.interrupt_status = InterruptType.interruptNMI
+
+    def triggerIRQ(self):
+        # self.I -> 0: /IRQ and /NMI get through; 1: only /NMI gets through)
+        if(self.I == 0):
+            self.interrupt_status = InterruptType.interruptIRQ
+
+    def nmi(self):
+        self.push_uint16(self.pc)
+        self.PHP(None, None)
+        self.pc = self.read_uint16(0xFFFA)
+        self.I = 1
+        self.wait_cycles += 7
+
+    def irq(self):
+        self.push_uint16(self.pc)
+        self.PHP(None, None)
+        self.pc = self.read_uint16(0xFFFE)
+        self.I = 1
+        self.wait_cycles += 7
+
 
     def ADC(self, address, mode):
         a = self.A
