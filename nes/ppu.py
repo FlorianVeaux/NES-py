@@ -1,3 +1,6 @@
+import numpy as np
+from nes.memory import PPUMemory
+
 class PPUError(Exception):
     """Base error class"""
 
@@ -120,7 +123,7 @@ class PPUSTATUS(Register):
 
 class OAMADDR(Register):
     def __init__(self, ppu):
-        self.ppu
+        self.ppu = ppu
         self.address = 0x00 # 8 bits
     
     def write(self, value):
@@ -140,19 +143,20 @@ class OAMDATA(Register):
         return self.data[oam_address]
     
     def write(self, value):
+        oam_address = self.ppu.OAMADDR.address
         self.data[oam_address] = value
         self.ppu.OAMADDR.increment()
     
-    def upload_from_cpu(data):
+    def upload_from_cpu(self, data):
         self.data = data
 
 
 class PPUSCROLL(Register):
     def __init__(self, ppu):
         self.ppu = ppu
-    
-    def write(self, value)
-        if self.ppu.w == False
+
+    def write(self, value):
+        if self.ppu.w == False:
             # t: ....... ...HGFED = d: HGFED...
             # x:              CBA = d: .....CBA
             # w:                  = 1
@@ -209,7 +213,7 @@ class PPUDATA(Register):
             self.ppu.v += 32 
         return value
 
-class OAMDMA(Regiter):
+class OAMDMA(Register):
     def __init__(self, ppu):
         self.ppu = ppu
     
@@ -219,8 +223,11 @@ class OAMDMA(Regiter):
         cpu_data = self.ppu.cpu.memory.read_slice(begin, end)
         self.ppu.OAMDATA.upload_from_cpu(cpu_data)
 
-        # Add a stall time to the CPU, 513 or 514
-        # TODO
+        if self.ppu.clock % 2 == 1:
+            self.ppu.cpu.wait_cycles += 514
+        else:
+            self.ppu.cpu.wait_cycles += 513
+
 
 
 class PPU:
@@ -249,7 +256,7 @@ class PPU:
         self.w = False # Write toggle
 
         self.memory = PPUMemory(console)
-        self.cpu = self.console.cpu
+        self.cpu = console.cpu
 
     def read_register(self, address):
         """CPU and PPU communicate through the PPU's registers.
