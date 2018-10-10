@@ -132,6 +132,12 @@ class OAMADDR(Register):
 
 
 class OAMDATA(Register):
+    """OAMDATA contains up to 64 sprites on 4 bytes each.
+        - byte 0: Y position
+        - byte 1: tile index
+        - byte 2: attributes
+        - byte 3: X position
+    """
     def __init__(self, ppu):
         self.ppu = ppu
         self.data = np.zeros(256, dtype='uint8')
@@ -272,9 +278,28 @@ class PPU:
         self.attribute_table_byte = 0
         self.lower_tile_byte = 0
         self.higher_tile_byte = 0
-        self.loaded_data = 0 # 32 bits!
+        self.background_data = 0 # 64 bits!
+
+        # SPRITE TEMP VARS
+        sprite_count = 0
+        sprite_graphics = [] # 32 bits * 8
+        sprite_positions = [] # 1 bytes * 8
+        sprite_priorities = [] # 1 byte * 8
+        sprite_indexes = [] # 1 byte * 8
 
     def tick(self):
+        # TODO: nmi related logic
+
+        # jump on odd frames for the prerender line if render is set
+        if self.PPUMASK.sprite_flag or self.PPUMASK.background_flag:
+            if not self.is_even_screen and \
+                self.scan_line == 261 and \
+                self.clock == 339:
+                self.clock = 0
+                self.scan_line = 0
+                self.is_even_screen = not self.is_even_screen
+                return
+
         self.clock += 1
         if self.clock == PPU.CLOCK_CYCLE:
             self.clock = 0
@@ -285,34 +310,249 @@ class PPU:
 
 
     def render_pixel(self):
-        raise NotImplementedError
+        x, y = self.clock - 1, self.scan_line
+        background = self.get_background_pixel()
+        i, sprite = self.get_sprite_pixel()
+        if x < 8 and not self.PPUMASK.left_background_flag:
+            background = 0
+        if x < 8 and not self.PPUMASK.left_sprites_flag:
+            sprite = 0
+        # Transparency checks
+        b, s = background % 4 != 0, sprite % 4 != 0
+        if not b and not s:
+            color = 0
+        elif not b and s:
+            color = sprite | 0x10
+        elif not s and b:
+            color = background
+        else:
+            if self.sprite_indexes[i] == 0 and x < 255:
+                self.PPUSTATUS.sprite_zero_flag = 1
+            if self.sprite_priorities[i] == 0:
+                color = sprite | 0x10
+            else:
+                color = background
+
+        palette_info = self.memory.read(0x3F00 + color % 64)
+        # TODO: finish this
+        # define a palette with all colors
+        # c = palette[palette_info]
+        # render pixel on scren
+        # self._console.screen.setRGB(x, y, c)
 
     def increment_horizontal_scroll(self):
-        raise NotImplementedError
+        """increment hori(v)"""
+        if self.v & 0x001F == 31:
+            # then set coarse X to 0
+            self.v &= 0xFFE0
+            # switch horizontal nametable
+            self.v ^= 0x0400
+        else:
+            # increment coarse X
+            self.v += 1
 
     def increment_vertical_scroll(self):
-        raise NotImplementedError
+        """increment vert(v)"""
+        # if fine Y < 7, increment it
+        if self.v & 0x7000 != 0x7000:
+            self.v += 0x1000
+        else:
+            # fine Y = 0
+            self.v &= 0x8FFF
+            # let y = coarse Y
+            y = (self.v & 0x03E0) >> 5
+            if y == 29:
+                y = 0
+                # switch vertical nametable
+                ppu.v ^= 0x0800
+            elif y == 31:
+                y = 0
+            else:
+                y += 1
+            # put coarse Y back into v
+            self.v = (self.v & 0xFC1F) | (y << 5)
 
     def copy_horizontal_scroll(self):
-        raise NotImplementedError
+        """hori(v) = hori(t)"""
+        self.v = (self.v & 0xFBE0) | (self.t & 0x041F)
 
     def copy_vertical_scroll(self):
-        raise NotImplementedError
+        """vert(v) = vert(t)"""
+        self.v = (self.v & 0x841F) | (self.t & 0x7BE0)
+
+    def get_sprite_pixel(self):
+        """Returns the sprite pixel that will be considered for rendering, as
+        well as the sprite index."""
+        if not self.PPUMASK.sprite_flag:
+            return 0, 0
+        for i in range(self.sprite_count):
+            # relative X position compared to beginning of sprite
+            offset = (self.clock - 1) - self.sprite_positions[i]
+            if offset < 0 or offset > 7:
+                continue
+            color = (self.sprite_graphics[i] >> (7 - offset) * 4) & 0xF
+            if color % 4 == 0:
+                # sprite is transparent
+                continue
+            # Even if other sprites were to be set at this coordinate, we only
+            # render the first one anyway.
+            return i, color
+        return 0, 0
+
+    def fetch_sprite_graphics(i, row):
+        """Gets the 8 pixel's worth of graphical data for the given sprite.
+        Args:
+            row: the row WITHIN the sprite (0 == top of sprite)
+        """
+        tile_index = self.OAMDATA.data[i * 4 + 1]
+        attributes = self.OAMDATA.data[i * 4 + 2]
+        vertical_flip = attributes & 0x80 == 0x80
+        horizontal_flip = attribute & 0x40 == 0x40
+        if not self.PPUCTRL.sprite_size_flag:
+            # sprite of size 8
+            if vertical_flip:
+                row = 7 - row
+            table = self.PPUCTRL.sprite_table_flag
+        else:
+            if vertical_flip:
+                row = 15 - row
+            # In that case, the lowest byte gives the table number and the
+            # highest 7 the tile number
+            table = tile_index & 1
+            tile_index &= 0xFE
+            if row > 7:
+                tile_index += 1
+                row -= 8
+        address = 0x1000 * table + 0x10 * tile + row
+        low_tile_byte = self.memory.read(address)
+        high_tile_byte = self.memory.read(address + 8)
+        # We now combine together the data for 8 pixels, similar to
+        # load_background_data
+        a = (attributes & 0x3) << 2
+        for i in range(8):
+            if horizontal_flip:
+                a = (high_tile_byte & 1) << 1
+                b = (high_tile_byte & 1) << 0
+                low_tile_byte >>= 1
+                high_tile_byte >>= 1
+            else:
+                b = (high_tile_byte & 0x80) >> 6
+                c = (low_tile_byte & 0x80) >> 7
+                low_tile_byte <<= 1
+                high_tile_byte <<= 1
+            data <<= 4
+            data |= (a | b | c)
+        return data
+
+    def load_sprite_data(self):
+        """Gets all sprite data for the current scan line.
+        """
+        h = 16 if self.PPUCTRL.sprite_size_flag else 8
+        data = self.OAMDATA.data
+        count = 0
+        for i in range(64):
+            # get x, y and attribute data
+            y, a, x = data[i * 4], data[i * 4 + 2], data[i * 4 + 3]
+            top, bottom = y, y + h
+            # top is the smallest, bottom the biggest row number
+            if self.scan_line < top or self.scan_line > bottom:
+                # this sprite does not appear on this line
+                continue
+            count += 1
+            if count <= 8:
+                self.sprite_graphics[count] = self.fetch_sprite_graphics(
+                    i, self.scan_line - top
+                )
+                self.sprite_positions[count] = x
+                self.sprite_priorities[count] = (a >> 5) & 1
+                self.sprite_indexes[count] = i
+        if count > 8:
+            # no rendering if we hit more than 8 sprites on this line, but
+            # set the overflow flag in that case
+            count = 8
+            self.PPUSTATUS.sprite_overflow_flag = 1
+        self.sprite_count = count
+
+    def get_background_pixel(self):
+        """Returns the background pixel that will be considered for rendering.
+        For that, select the 32 highest bits of the shift register (data that
+        has been fetched during the previous cycle) and get the pixel data
+        corresponding to the highest 4 bits, minus the fine X scroll (this is
+        due to how load_background_data works, the data for the first pixels is
+        stored in the highest bits).
+        """
+        if not self.PPUMASK.background_flag:
+            return 0
+        # the 4 bit shift on background_data is done in the main PPU loop
+        cycle_data = self.background_data >> 32
+        pixel_data = (cycle_data >> (7 - self.x) * 4) & 0xF
+        return pixel_data
 
     def load_background_data(self):
-        raise NotImplementedError
+        """Each PPU fetch cycle (8 ticks) needs to get the data corresponding to
+        half a tile (as it is the data that will be "consumed" to render 8
+        pixels, one per tick). That data will be consumed in the NEXT cycle and
+        therefore gets loaded as the lowest bits of background data (the highest
+        bits being consumed in the current cycle).
+        For one given background pixel, the necessary information is as follows:
+        A A B C
+        ^ ^ ^ ^
+        | | | a bit from the lower tile byte
+        | | a bit from the higher tile byte
+        what palette to use (a.k.a the attribute table byte)
+        """
+        data = 0
+        a = self.attribute_table_byte
+        for i in range(8):
+            b = (self.high_tile_byte & 0x80) >> 6
+            c = (self.low_tile_byte & 0x80) >> 7
+            data <<= 4
+            self.high_tile_byte <<= 1
+            self.low_tile_byte <<= 1
+            data |= (a | b | c)
+        self.background_data |= data
+
 
     def fetch_name_table_byte(self):
-        raise NotImplementedError
+        """The name table address is given by a $2000 offset combined with the
+        12 lowest bits of the VRAM address.
+        """
+        address = self.v & 0xFFF # select 12 bytes
+        self.name_table_byte = self.memory.read(0x2000 + address)
 
     def fetch_attribute_table_byte(self):
-        raise NotImplementedError
+        """To get the attribute table byte, we need to combine:
+            - the 2 bits selecting the name table,
+            - the three highest bits of the coarse Y scroll,
+            - the three highest bits of the coarse X scroll
+        With a #23C0 offset.
+        """
+        address = 0x23C0
+        address |= self.v & 0xC00
+        address |= (self.v & 0x380) >> 4
+        address |= (self.v & 0x1C) >> 2
+        self.attribute_table_byte = self.memory.read(address)
 
     def fetch_lower_tile_byte(self):
-        raise NotImplementedError
+        """To fetch a tile byte, combine:
+            - table index(stored in PPUCTRL) * $1000
+            - tile index (in the name table byte) * $10
+            - fine Y scroll (3 highest bits of VRAM address)
+        """
+        fine_y = (self.v >> 12) & 0x7
+        table_index = self.PPUCTRL.background_table_flag
+        tile_index = self.name_table_byte
+        address = 0x1000 * table_index + 0x10 * tile_index + fine_y
+        self.low_tile_byte = self.memory.read(address)
 
     def fetch_higher_tile_byte(self):
-        raise NotImplementedError
+        """Read one byte above the lower tile byte
+        """
+        fine_y = (self.v >> 12) & 0x7
+        table_index = self.PPUCTRL.background_table_flag
+        tile_index = self.name_table_byte
+        address = 0x1000 * table_index + 0x10 * tile_index + fine_y
+        self.high_tile_byte = self.memory.read(address + 8)
 
     def step(self):
         self.tick()
@@ -333,7 +573,7 @@ class PPU:
                     # LINES: 0 - 239, 261; CLOCK: 1 - 256, 321 - 336
                     switch = self.clock % 8
                     # Make sure that we have 8 new bits every 2 ticks:
-                    loaded_data >> 4
+                    self.background_data <<= 4
                     if switch == 0:
                         self.increment_horizontal_scroll()
                         # load some new data
@@ -353,8 +593,12 @@ class PPU:
                 if self.clock == 257:
                     self.copy_horizontal_scroll()
 
-                # TODO: implement sprite logic
-                # TODO: implement 2 last cycle logic
+                if self.clock == 257:
+                    # In a real NES, this would be performed over several
+                    # cycles. Here, we do it at once
+                    self.load_sprite_data()
+
+                # TODO: implement 2 last cycle logic?
 
             if is_prerender_line:
                 if self.clock == 1:
@@ -362,10 +606,10 @@ class PPU:
                     self.PPUSTATUS.sprite_overflow_flag = 0
                     self.PPUSTATUS.sprite_zero_flag = 0
 
-                # TODO: jump or not depending on frame parity
-
                 if 280 <= self.clock <= 304:
                     self.copy_vertical_scroll()
+
+                # The jump on odd screens is peformed in tick()
 
             if is_postrender_line and self.clock == 1:
                 self.PPUSTATUS.vertical_blank_started_flag = 1

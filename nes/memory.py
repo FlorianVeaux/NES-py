@@ -144,8 +144,11 @@ class PPUMemory:
         elif address < 0x3000:
             mirroring = self._console.mapper.mirror_id
             return self._name_table[mirrored_address(address, mirroring) - 0x2000]
-        elif 0x3F00 <= address < 0x3F20:
-            return self._palette[address - 0x3F00]
+        elif 0x3F00 <= address < 0x4000:
+            pointer = address % 32
+            if pointer >= 16 and pointer % 4 == 0:
+                pointer -= 16
+            return self._palette[pointer]
         else:
             raise PPUMemoryError('Unknown address: {}'.format(hex(address)))
 
@@ -158,7 +161,10 @@ class PPUMemory:
         elif address < 0x3000:
             mirroring = self._console.mapper.mirror_id
             self._name_table[mirrored_address(address, mirroring) - 0x2000] = value
-        elif 0x3F00 <= address < 0x3F20:
-            self._palette[address - 0x3F00] = value
+        elif 0x3F00 <= address < 0x4000:
+            pointer = address % 32
+            if pointer >= 16 and pointer % 4 == 0:
+                pointer -= 16
+            self._palette[pointer] = value
         else:
             raise PPUMemoryError('Unknown address: {}'.format(hex(address)))
