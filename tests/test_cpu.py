@@ -10,10 +10,8 @@ def _abs_path(path):
 
 def test_cpu():
     """Tests CPU againsts a benchmark."""
-    console = Console.create()
+    console = Console(_abs_path('nestest.nes'))
     ms6502 = console.cpu
-    mapper = Mapper.from_nes_file(_abs_path('nestest.nes'))
-    console.load_cartridge(mapper)
 
     benchmark = open(_abs_path('benchmark.txt'))
     ms6502.memory.write(0x0180, 0x33)

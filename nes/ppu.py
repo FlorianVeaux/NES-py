@@ -287,6 +287,13 @@ class PPU:
         sprite_priorities = [] # 1 byte * 8
         sprite_indexes = [] # 1 byte * 8
 
+    def reset(self):
+        self.clock = 340
+        self.scan_line = 240
+        self.PPUCTRL.write(0)
+        self.PPUMASK.write(0)
+        self.OAMADDR.write(0)
+
     def tick(self):
         # TODO: nmi related logic
 

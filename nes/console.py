@@ -9,6 +9,8 @@ class Console:
         self.ppu = PPU(self)
         self.apu = APU(self)
         self.mapper = Mapper.from_nes_file(file_name)
+        self.cpu.reset()
+        self.ppu.reset()
 
     def step(self):
         cpu_steps = self.cpu.step()
