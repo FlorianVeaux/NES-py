@@ -4,7 +4,7 @@ from nes.ppu import PPU
 from nes.mapper import Mapper
 
 class Console:
-    def __init__(self, file_name, screen, debug=False):
+    def __init__(self, file_name, screen=None, debug=False):
         self._debug = debug
         if debug:
             self.debugger = Debugger()

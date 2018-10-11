@@ -7,17 +7,12 @@ def test_cpu_perf():
     cpu = console.cpu
     CYCLES = 300000
 
-    sp = Profiler('step')
+    sp = Profiler('step.profile')
     with sp as p:
         for i in range(CYCLES):
             cpu.step()
 
-    # rp = Profiler('read8')
+    # rp = Profiler('read.profile')
     # with rp as p:
     #     for i in range(CYCLES):
-    #         cpu.read_uint8(0x1000)
-
-    # rp = Profiler('read16')
-    # with rp as p:
-    #     for i in range(CYCLES):
-    #         cpu.read_uint16(0x1000)
+    #         cpu.memory.read(0xFFFF)
