@@ -359,8 +359,10 @@ class PPU:
             else:
                 color = background
 
+        if x == 35 and y==25:
+            import pdb; pdb.set_trace()
         palette_info = self.memory.read(0x3F00 + color % 64)
-        self._console.debugger.log_str('Pixel x={0}, y={1}, c={2}'.format(x, y, color % 64))
+        self._console.debugger.log_str('Pixel x={0}, y={1}, c={2}'.format(x, y, palette_info))
         # TODO: finish this
         # define a palette with all colors
         # c = palette[palette_info]
