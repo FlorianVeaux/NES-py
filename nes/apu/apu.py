@@ -1,19 +1,9 @@
 import numpy as np
 
+
 class APUError(Exception):
     pass
 
-class Pulse:
-    pass
-
-class Triangle:
-    pass
-
-class Noise:
-    pass
-
-class DMC:
-    pass
 
 class APU:
 
