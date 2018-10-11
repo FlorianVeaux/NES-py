@@ -348,6 +348,61 @@ class CPU:
             )
         return s
 
+    def _get_mneumonic_safe(self, opcode, mode, args):
+        s = " " if INSTRUCTION_IS_VALID[opcode] else "*"
+        s += INSTRUCTION_NAMES[opcode] + " "
+        if mode == AddressingMode.modeAbsolute:
+            arg = self.read_uint16(self.pc + 1)
+            s += "${0:04X}".format(
+                arg
+            )
+        elif mode == AddressingMode.modeAbsoluteX:
+            arg = self.read_uint16(self.pc + 1)
+            s += "${0:04X},X".format(
+                arg
+                )
+        elif mode == AddressingMode.modeAbsoluteY:
+            arg = self.read_uint16(self.pc + 1)
+            s += '${0:04X},Y'.format(arg)
+        elif mode == AddressingMode.modeAccumulator:
+            s += "A"
+        elif mode == AddressingMode.modeImmediate:
+            s += '#${0:02X}'.format(args[0])
+        elif mode == AddressingMode.modeImplied:
+            pass
+        elif mode == AddressingMode.modeIndexedIndirect:
+            s += "(${0:02X},X)".format(
+                    args[0]
+                )
+        elif mode == AddressingMode.modeIndirect:
+            arg = self.read_uint16(self.pc + 1)
+            s += "(${0:04X})".format(arg)
+        elif mode == AddressingMode.modeIndirectIndexed:
+            s += "(${0:02X}),Y".format(
+                    args[0]
+                )
+        elif mode == AddressingMode.modeRelative:
+            branch_offset = self.read_uint8(self.pc + 1)
+            if(branch_offset & 0b10000000):
+                branch_offset = branch_offset - 256
+
+            arg = self.pc + 2 + branch_offset
+            s += "${0:04X}".format(arg)
+        elif mode == AddressingMode.modeZeroPage:
+            s += "${0:02X}".format(args[0])
+        elif mode == AddressingMode.modeZeroPageX:
+            arg = self.read_uint8(self.pc+1)
+            arg_x = (arg + self.X) & 0xFF
+            s += "${0:02X},X".format(
+                arg
+            )
+        elif mode == AddressingMode.modeZeroPageY:
+            s += "${0:02X},Y @ {1:02X} = {2:02X}".format(
+                args[0],
+                (args[0] + self.Y) & 0xFF,
+                self.read_uint8((args[0] + self.Y) & 0xFF)
+            )
+        return s
 
     def step(self, debug=False):
         if self.wait_cycles > 0:
@@ -495,7 +550,6 @@ class CPU:
         self.pc = self.read_uint16(0xFFFE)
         self.I = 1
         self.wait_cycles += 7
-
 
     def ADC(self, address, mode):
         a = self.A
