@@ -1,5 +1,9 @@
 import numpy as np
 from nes.memory import PPUMemory
+import logging
+
+
+log = logging.getLogger('nes.' + __name__)
 
 class PPUError(Exception):
     """Base error class"""
@@ -14,7 +18,8 @@ class PPURegisterError(PPUError):
 
 class Register:
     def read(self):
-        raise PPURegisterError('Read is not supported.', self)
+        return '-1'
+        # raise PPURegisterError('Read is not supported.', self)
 
     def write(self, value):
         raise PPURegisterError('Write is not supported.', self)
@@ -45,14 +50,15 @@ class PPUCTRL(Register):
     """
 
     def write(self, value):
-        self.nametable_flag        = value & 0b00000011
-        self.increment_flag        = value & 0b00000100
-        self.sprite_table_flag     = value & 0b00001000
-        self.background_table_flag = value & 0b00010000
-        self.sprite_size_flag      = value & 0b00100000
-        self.master_slave_flag     = value & 0b01000000
-        self.nmi_flag              = value & 0b10000000
+        self.nametable_flag        = (value & 0b00000011) >> 0
+        self.increment_flag        = (value & 0b00000100) >> 2
+        self.sprite_table_flag     = (value & 0b00001000) >> 3
+        self.background_table_flag = (value & 0b00010000) >> 4
+        self.sprite_size_flag      = (value & 0b00100000) >> 5
+        self.master_slave_flag     = (value & 0b01000000) >> 6
+        self.nmi_flag              = (value & 0b10000000) >> 7
 
+        self.ppu.nmi_change()
         # t: ...BA.. ........ = d: ......BA
         self.ppu.t = (self.ppu.t & 0b111001111111111) | ((value & 0b00000011) << 10)
 
@@ -68,29 +74,16 @@ class PPUMASK(Register):
         self.green_emphasize_flag = 0    # 0: off, 1: on
         self.blue_emphasize_flag = 0     # 0: off, 1: on
 
-    """
-    No read access
-    def read(self):
-        val = self.greyscale_flag
-        val |= self.left_background_flag << 1
-        val |= self.left_sprites_flag << 2
-        val |= self.background_flag << 3
-        val |= self.sprites_flag << 4
-        val |= self.red_emphasize_flag << 5
-        val |= self.green_emphasize_flag << 6
-        val |= self.blue_emphasize_flag << 7
-        return val
-    """
-
     def write(self, value):
-        self.greyscale_flag        = value & 0b00000001
-        self.left_background_flag  = value & 0b00000010
-        self.left_sprites_flag     = value & 0b00000100
-        self.background_flag       = value & 0b00001000
-        self.sprites_flag          = value & 0b00010000
-        self.red_emphasize_flag    = value & 0b00100000
-        self.green_emphasize_flag  = value & 0b01000000
-        self.blue_emphasize_flag   = value & 0b10000000
+        log.debug('Write ppumask val=%s', value)
+        self.greyscale_flag        = (value & 0b00000001) >> 0
+        self.left_background_flag  = (value & 0b00000010) >> 1
+        self.left_sprites_flag     = (value & 0b00000100) >> 2
+        self.background_flag       = (value & 0b00001000) >> 3
+        self.sprites_flag          = (value & 0b00010000) >> 4
+        self.red_emphasize_flag    = (value & 0b00100000) >> 5
+        self.green_emphasize_flag  = (value & 0b01000000) >> 6
+        self.blue_emphasize_flag   = (value & 0b10000000) >> 7
 
 class PPUSTATUS(Register):
     def __init__(self, ppu):
@@ -103,7 +96,10 @@ class PPUSTATUS(Register):
         val = self.vertical_blank_started_flag << 7
         val |= self.sprite_zero_flag << 6
         val |= self.sprite_overflow_flag << 5
-
+        if self.ppu.nmi_occured:
+            val |= 1 << 7
+        self.ppu.nmi_occured = False
+        self.ppu.nmi_change()
         val |= self.ppu.latch_value & 0x00011111
 
         # Should start an NMI interrupt
@@ -111,13 +107,6 @@ class PPUSTATUS(Register):
         self.ppu.w = False
         return val
 
-    """
-    No write access
-    def write(self, value):
-        self.sprite_overflow_flag        = value & 0b10000000 
-        self.sprite_zero_flag            = value & 0b01000000
-        self.vertical_blank_started_flag = value & 0b00100000
-    """
 
 class OAMADDR(Register):
     def __init__(self, ppu):
@@ -243,7 +232,16 @@ class PPU:
 
     def __init__(self, console):
         self.memory = PPUMemory(console)
+        self._console = console
         self.cpu = console.cpu
+
+        self.latch_value = 0
+
+        # NMI
+        self.nmi_occured = True
+        self.nmi_output = True
+        self.nmi_previous = True
+        self.nmi_delay = 0
 
         # REGISTERS
         # $2000: PPUCTRL
@@ -272,6 +270,7 @@ class PPU:
         self.clock = 0
         self.scan_line = 0
         self.is_even_screen = True
+        self.frame = 0 # frame counter
 
         # BACKGROUND TEMP VARS
         self.name_table_byte = 0
@@ -295,16 +294,20 @@ class PPU:
         self.OAMADDR.write(0)
 
     def tick(self):
-        # TODO: nmi related logic
+        if self.nmi_delay > 0:
+            self.nmi_delay -= 1
+            if self.nmi_delay == 0 and self.nmi_output and self.nmi_occured:
+                self._console.cpu.triggerNMI()
 
         # jump on odd frames for the prerender line if render is set
-        if self.PPUMASK.sprite_flag or self.PPUMASK.background_flag:
+        if self.PPUMASK.sprites_flag or self.PPUMASK.background_flag:
             if not self.is_even_screen and \
                 self.scan_line == 261 and \
                 self.clock == 339:
                 self.clock = 0
                 self.scan_line = 0
                 self.is_even_screen = not self.is_even_screen
+                self.frame += 1
                 return
 
         self.clock += 1
@@ -313,8 +316,24 @@ class PPU:
             self.scan_line += 1
             if self.scan_line == PPU.PRE_RENDER_SCAN_LINE:
                 self.scan_line = 0
+                self.frame += 1
                 self.is_even_screen = not self.is_even_screen
 
+
+    def nmi_change(self):
+        nmi = self.nmi_output and self.nmi_occured
+        if nmi and not self.nmi_previous:
+            self.nmi_delay = 15
+        self.nmi_previous = nmi
+
+    def set_vertical_blank(self):
+        log.debug('vertical blank')
+        self.nmi_occured = True
+        self.nmi_change()
+
+    def clear_vertical_blank(self):
+        self.nmi_occured = False
+        self.nmi_change()
 
     def render_pixel(self):
         x, y = self.clock - 1, self.scan_line
@@ -341,6 +360,7 @@ class PPU:
                 color = background
 
         palette_info = self.memory.read(0x3F00 + color % 64)
+        log.debug('Pixel x=%s, y=%s, c=%s', x, y, palette_info)
         # TODO: finish this
         # define a palette with all colors
         # c = palette[palette_info]
@@ -390,7 +410,7 @@ class PPU:
     def get_sprite_pixel(self):
         """Returns the sprite pixel that will be considered for rendering, as
         well as the sprite index."""
-        if not self.PPUMASK.sprite_flag:
+        if not self.PPUMASK.sprites_flag:
             return 0, 0
         for i in range(self.sprite_count):
             # relative X position compared to beginning of sprite
@@ -563,7 +583,7 @@ class PPU:
 
     def step(self):
         self.tick()
-        rendering_enabled = self.PPUMASK.background_flag or self.PPUMASK.sprite_flag
+        rendering_enabled = self.PPUMASK.background_flag or self.PPUMASK.sprites_flag
         is_visible_clock = 1 <= self.clock <= 256
         is_visible_line = self.scan_line < PPU.POST_RENDER_SCAN_LINE
         is_prerender_line = self.scan_line == PPU.PRE_RENDER_SCAN_LINE
@@ -608,38 +628,38 @@ class PPU:
                 # TODO: implement 2 last cycle logic?
 
             if is_prerender_line:
-                if self.clock == 1:
-                    self.PPUSTATUS.vertical_blank_started_flag = 0
-                    self.PPUSTATUS.sprite_overflow_flag = 0
-                    self.PPUSTATUS.sprite_zero_flag = 0
-
                 if 280 <= self.clock <= 304:
                     self.copy_vertical_scroll()
 
                 # The jump on odd screens is peformed in tick()
 
-            if is_postrender_line and self.clock == 1:
-                self.PPUSTATUS.vertical_blank_started_flag = 1
+        if is_prerender_line and self.clock == 1:
+            self.clear_vertical_blank()
+            self.PPUSTATUS.sprite_overflow_flag = 0
+            self.PPUSTATUS.sprite_zero_flag = 0
+
+        if is_postrender_line and self.clock == 1:
+            self.set_vertical_blank()
 
     def read_register(self, address):
         """CPU and PPU communicate through the PPU's registers.
         """
         if address == 0x2000:
-            self.PPUCTRL.read()
+            return self.PPUCTRL.read()
         elif address == 0x2001:
-            self.PPUMASK.read()
+            return self.PPUMASK.read()
         elif address == 0x2002:
-            self.PPUSTATUS.read()
+            return self.PPUSTATUS.read()
         elif address == 0x2003:
-            self.OAMADDR.read()
+            return self.OAMADDR.read()
         elif address == 0x2004:
-            self.OAMDATA.read()
+            return self.OAMDATA.read()
         elif address == 0x2005:
-            self.PPUSCROLL.read()
+            return self.PPUSCROLL.read()
         elif address == 0x2006:
-            self.PPUADDR.read()
+            return self.PPUADDR.read()
         elif address == 0x2007:
-            self.PPUDATA.read()
+            return self.PPUDATA.read()
         else:
             raise PPUError('Unknown register of address={}'.format(address))
 
@@ -647,6 +667,7 @@ class PPU:
         """CPU and PPU communicate through the PPU's registers.
         """
 
+        log.debug('address=%s, val=%s', hex(address), value)
         self.latch_value = value
         if address == 0x2000:
             self.PPUCTRL.write(value)
@@ -657,8 +678,6 @@ class PPU:
         elif address == 0x2003:
             self.OAMADDR.write(value)
         elif address == 0x2004:
-            """if self.isRendering:
-                pass"""
             self.OAMDATA.write(value)
         elif address == 0x2005:
             self.PPUSCROLL.write(value)
