@@ -12,13 +12,13 @@ class Console:
         self.cpu.reset()
         self.ppu.reset()
 
-    def step(self):
-        cpu_steps = self.cpu.step()
+    def step(self, debug=False):
+        cpu_steps = self.cpu.step(debug)
         ppu_steps = 3*cpu_steps # 3.2 pour PAL
         for _ in range(ppu_steps):
             self.ppu.step()
 
-        for _ in range(cpu_steps):
-            self.apu.step()
+        # for _ in range(cpu_steps):
+        #     self.apu.step()
 
         return cpu_steps

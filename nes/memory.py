@@ -1,7 +1,11 @@
 import numpy as np
 import pdb
+import logging
 
 from nes.mirror import mirrored_address
+
+
+log = logging.getLogger('nes.' + __name__)
 
 
 class MemError(Exception):

@@ -1,6 +1,10 @@
 from enum import IntEnum
 from nes.memory import CPUMemory
 import pdb
+import logging
+
+
+log = logging.getLogger('nes.' + __name__)
 
 class InterruptType(IntEnum):
     interruptNone = 1
@@ -352,9 +356,12 @@ class CPU:
 
         if self.interrupt_status == InterruptType.interruptNMI:
             self.nmi()
+            self.interrupt_status = InterruptType.interruptNone
             return 0
+
         elif self.interrupt_status == InterruptType.interruptIRQ:
             self.irq()
+            self.interrupt_status = InterruptType.interruptNone
             return 0
 
         opcode = self.read_uint8(self.pc)
@@ -440,10 +447,23 @@ class CPU:
             debug_data['cycles'] = self.step_cycles
             if rval is not None:
                 debug_data['mneumonic'] = debug_data['mneumonic'].replace("RESULT", rval)
-            return debug_data
+            # string print
+            s= debug_data['PC'] + "  "
+            s+= debug_data['opcode'] + " "
+            for arg in debug_data['args']:
+                s+= arg + " "
+            s= s.ljust(15)
+            s+= debug_data['mneumonic']
+            s= s.ljust(48)
+            s+= debug_data['A'] + " " + debug_data['X'] + " " + debug_data['Y'] + " " + debug_data['P'] + " "
+            s+= debug_data['SP'] + " "
+            # cyc_s= str(self.step_cycles% 341).rjust(3)
+            # s+= "CYC:{}".format(cyc_string)
+            print(s)
         return self.step_cycles
 
     def execute_instruction(self, opcode, address, mode):
+        # log.debug('opcode=%s, address=%s', opcode, hex(address))
         return self.instruction_table[opcode](address, mode)
 
     @staticmethod
@@ -464,6 +484,7 @@ class CPU:
 
     def triggerNMI(self):
         # self.I -> 0: /IRQ and /NMI get through; 1: only /NMI gets through)
+        print('trigger')
         self.interrupt_status = InterruptType.interruptNMI
 
     def triggerIRQ(self):
