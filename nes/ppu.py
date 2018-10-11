@@ -58,6 +58,7 @@ class PPUCTRL(Register):
         self.master_slave_flag     = (value & 0b01000000) >> 6
         self.nmi_flag              = (value & 0b10000000) >> 7
 
+        self.ppu._console.debugger.log_str('PPUCTRL NMI FLAG={}'.format(self.nmi_flag))
         self.ppu.nmi_change()
         # t: ...BA.. ........ = d: ......BA
         self.ppu.t = (self.ppu.t & 0b111001111111111) | ((value & 0b00000011) << 10)
@@ -96,6 +97,7 @@ class PPUSTATUS(Register):
         val = self.vertical_blank_started_flag << 7
         val |= self.sprite_zero_flag << 6
         val |= self.sprite_overflow_flag << 5
+        self.ppu._console.debugger.log_str('PPUSTATUS READ NMI={}'.format(self.ppu.nmi_occured))
         if self.ppu.nmi_occured:
             val |= 1 << 7
         self.ppu.nmi_occured = False
@@ -212,8 +214,7 @@ class OAMDMA(Register):
 
     def write(self, value):
         begin = value << 8
-        end = begin | 0x00FF
-        cpu_data = self.ppu.cpu.memory.read_slice(begin, end)
+        cpu_data = self.ppu.cpu.memory.read_page(begin)
         self.ppu.OAMDATA.upload_from_cpu(cpu_data)
 
         if self.ppu.clock % 2 == 1:
@@ -238,9 +239,8 @@ class PPU:
         self.latch_value = 0
 
         # NMI
-        self.nmi_occured = True
-        self.nmi_output = True
-        self.nmi_previous = True
+        self.nmi_occured = False
+        self.nmi_previous = False
         self.nmi_delay = 0
 
         # REGISTERS
@@ -260,6 +260,8 @@ class PPU:
         self.PPUADDR = PPUADDR(self)
         # $2007: PPUDATA
         self.PPUDATA = PPUDATA(self)
+        # $4014: OAMDMA
+        self.OAMDMA = OAMDMA(self)
 
         self.v = 0x00  # Current VRAM, 15bits
         self.t = 0x00  # Temporary VRAM, 15bits
@@ -296,7 +298,7 @@ class PPU:
     def tick(self):
         if self.nmi_delay > 0:
             self.nmi_delay -= 1
-            if self.nmi_delay == 0 and self.nmi_output and self.nmi_occured:
+            if self.nmi_delay == 0 and self.PPUCTRL.nmi_flag and self.nmi_occured:
                 self._console.cpu.triggerNMI()
 
         # jump on odd frames for the prerender line if render is set
@@ -321,13 +323,13 @@ class PPU:
 
 
     def nmi_change(self):
-        nmi = self.nmi_output and self.nmi_occured
+        nmi = self.PPUCTRL.nmi_flag and self.nmi_occured
         if nmi and not self.nmi_previous:
             self.nmi_delay = 15
         self.nmi_previous = nmi
 
     def set_vertical_blank(self):
-        log.debug('vertical blank')
+        self._console.debugger.log_str('VerticalBlank')
         self.nmi_occured = True
         self.nmi_change()
 
@@ -660,6 +662,8 @@ class PPU:
             return self.PPUADDR.read()
         elif address == 0x2007:
             return self.PPUDATA.read()
+        elif address == 0x4014:
+            return self.OAMDMA.read()
         else:
             raise PPUError('Unknown register of address={}'.format(address))
 
@@ -685,5 +689,7 @@ class PPU:
             self.PPUADDR.write(value)
         elif address == 0x2007:
             self.PPUDATA.write(value)
+        elif address == 0x4014:
+            self.OAMDMA.write(value)
         else:
             raise PPUError('Unknown register of address={}'.format(address))

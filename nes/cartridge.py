@@ -39,6 +39,18 @@ class Cartridge:
         except IndexError:
             raise CartridgeError('Trying to read PRG_ROM at {}'.format(hex(address)))
 
+    def read_chr_rom(self, address):
+        try:
+            return self.CHR_ROM[address]
+        except IndexError:
+            raise CartridgeError('Trying to read CHR_ROM at {}'.format(hex(address)))
+
+    def read_chr_ram(self, address):
+        try:
+            return self.CHR_RAM[address]
+        except IndexError:
+            raise CartridgeError('Trying to read CHR_RAM at {}'.format(hex(address)))
+
     def read_prg_ram(self, address):
         try:
             return self.PRG_RAM[address]
@@ -51,3 +63,8 @@ class Cartridge:
         except IndexError:
             raise CartridgeError("Trying to write PRG_RAM at {}".format(hex(address)))
 
+    def write_chr_rom(self, address, value):
+        try:
+            self.CHR_ROM[address] = value
+        except IndexError:
+            raise CartridgeError("Trying to write CHR_ROM at {}".format(hex(address)))

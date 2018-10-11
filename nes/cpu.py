@@ -178,6 +178,7 @@ INSTRUCTION_IS_VALID = [
 
 class CPU:
     def __init__(self, console):
+        self._console = console
         self.memory = CPUMemory(console)
         self.step_cycles = 0
         self.pc = 0 # Program counter
@@ -447,19 +448,8 @@ class CPU:
             debug_data['cycles'] = self.step_cycles
             if rval is not None:
                 debug_data['mneumonic'] = debug_data['mneumonic'].replace("RESULT", rval)
+            self._console.debugger.log_data(debug_data)
             # string print
-            s= debug_data['PC'] + "  "
-            s+= debug_data['opcode'] + " "
-            for arg in debug_data['args']:
-                s+= arg + " "
-            s= s.ljust(15)
-            s+= debug_data['mneumonic']
-            s= s.ljust(48)
-            s+= debug_data['A'] + " " + debug_data['X'] + " " + debug_data['Y'] + " " + debug_data['P'] + " "
-            s+= debug_data['SP'] + " "
-            # cyc_s= str(self.step_cycles% 341).rjust(3)
-            # s+= "CYC:{}".format(cyc_string)
-            print(s)
         return self.step_cycles
 
     def execute_instruction(self, opcode, address, mode):
@@ -484,7 +474,7 @@ class CPU:
 
     def triggerNMI(self):
         # self.I -> 0: /IRQ and /NMI get through; 1: only /NMI gets through)
-        print('trigger')
+        self._console.debugger.log_str('InterruptNMI')
         self.interrupt_status = InterruptType.interruptNMI
 
     def triggerIRQ(self):

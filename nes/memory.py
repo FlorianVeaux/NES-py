@@ -58,6 +58,8 @@ class CPUMemory(object):
             # PPU registers are mirrored every 8 bytes
             # e.g. address 0x3210 => 0x3210 % 8 = 0 => read 0x2000
             return self._console.ppu.read_register(0x2000 + address % 8)
+        elif address == 0x4014:
+            return self._console.ppu.read_register(address)
         elif address <= 0x4FFF:
             return self._console.apu.read_register(address)
         elif address <= 0x5FFF:
@@ -100,6 +102,8 @@ class CPUMemory(object):
             # PPU registers are mirrored every 8 bytes
             # e.g. address 0x3210 => 0x3210 % 8 = 0 => write 0x2000
             self._console.ppu.write_register(0x2000 + address % 8, value)
+        elif address == 0x4014:
+            self._console.ppu.write_register(address, value)
         elif address < 0x5000:
             self._console.apu.write_register(address, value)
         elif address < 0x6000:
@@ -157,9 +161,6 @@ class PPUMemory:
             raise PPUMemoryError('Unknown address: {}'.format(hex(address)))
 
     def write(self, address, value):
-        raise NotImplementedError(
-            'PPU write not implemented at address={}'.format(hex(address))
-        )
         if address < 0x2000:
             self._console.mapper.write_chr(address, value)
         elif address < 0x3000:
