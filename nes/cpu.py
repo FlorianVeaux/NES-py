@@ -178,6 +178,7 @@ INSTRUCTION_IS_VALID = [
 
 class CPU:
     def __init__(self, console):
+        self._console = console
         self.memory = CPUMemory(console)
         self.step_cycles = 0
         self.pc = 0 # Program counter
@@ -347,6 +348,61 @@ class CPU:
             )
         return s
 
+    def _get_mneumonic_safe(self, opcode, mode, args):
+        s = " " if INSTRUCTION_IS_VALID[opcode] else "*"
+        s += INSTRUCTION_NAMES[opcode] + " "
+        if mode == AddressingMode.modeAbsolute:
+            arg = self.read_uint16(self.pc + 1)
+            s += "${0:04X}".format(
+                arg
+            )
+        elif mode == AddressingMode.modeAbsoluteX:
+            arg = self.read_uint16(self.pc + 1)
+            s += "${0:04X},X".format(
+                arg
+                )
+        elif mode == AddressingMode.modeAbsoluteY:
+            arg = self.read_uint16(self.pc + 1)
+            s += '${0:04X},Y'.format(arg)
+        elif mode == AddressingMode.modeAccumulator:
+            s += "A"
+        elif mode == AddressingMode.modeImmediate:
+            s += '#${0:02X}'.format(args[0])
+        elif mode == AddressingMode.modeImplied:
+            pass
+        elif mode == AddressingMode.modeIndexedIndirect:
+            s += "(${0:02X},X)".format(
+                    args[0]
+                )
+        elif mode == AddressingMode.modeIndirect:
+            arg = self.read_uint16(self.pc + 1)
+            s += "(${0:04X})".format(arg)
+        elif mode == AddressingMode.modeIndirectIndexed:
+            s += "(${0:02X}),Y".format(
+                    args[0]
+                )
+        elif mode == AddressingMode.modeRelative:
+            branch_offset = self.read_uint8(self.pc + 1)
+            if(branch_offset & 0b10000000):
+                branch_offset = branch_offset - 256
+
+            arg = self.pc + 2 + branch_offset
+            s += "${0:04X}".format(arg)
+        elif mode == AddressingMode.modeZeroPage:
+            s += "${0:02X}".format(args[0])
+        elif mode == AddressingMode.modeZeroPageX:
+            arg = self.read_uint8(self.pc+1)
+            arg_x = (arg + self.X) & 0xFF
+            s += "${0:02X},X".format(
+                arg
+            )
+        elif mode == AddressingMode.modeZeroPageY:
+            s += "${0:02X},Y @ {1:02X} = {2:02X}".format(
+                args[0],
+                (args[0] + self.Y) & 0xFF,
+                self.read_uint8((args[0] + self.Y) & 0xFF)
+            )
+        return s
 
     def step(self, debug=False):
         if self.wait_cycles > 0:
@@ -372,7 +428,7 @@ class CPU:
                 'PC': '{0:04X}'.format(self.pc),
                 'opcode': '{0:02X}'.format(opcode),
                 'args': ['{0:02X}'.format(a) for a in args],
-                'mneumonic': self._get_mneumonic(opcode, mode, args),
+                'mneumonic': self._get_mneumonic_safe(opcode, mode, args),
                 'A': 'A:{0:02X}'.format(self.A),
                 'X': 'X:{0:02X}'.format(self.X),
                 'Y': 'Y:{0:02X}'.format(self.Y),
@@ -447,19 +503,7 @@ class CPU:
             debug_data['cycles'] = self.step_cycles
             if rval is not None:
                 debug_data['mneumonic'] = debug_data['mneumonic'].replace("RESULT", rval)
-            # string print
-            s= debug_data['PC'] + "  "
-            s+= debug_data['opcode'] + " "
-            for arg in debug_data['args']:
-                s+= arg + " "
-            s= s.ljust(15)
-            s+= debug_data['mneumonic']
-            s= s.ljust(48)
-            s+= debug_data['A'] + " " + debug_data['X'] + " " + debug_data['Y'] + " " + debug_data['P'] + " "
-            s+= debug_data['SP'] + " "
-            # cyc_s= str(self.step_cycles% 341).rjust(3)
-            # s+= "CYC:{}".format(cyc_string)
-            print(s)
+            # self._console.debugger.log_data(debug_data)
         return self.step_cycles
 
     def execute_instruction(self, opcode, address, mode):
@@ -484,7 +528,6 @@ class CPU:
 
     def triggerNMI(self):
         # self.I -> 0: /IRQ and /NMI get through; 1: only /NMI gets through)
-        print('trigger')
         self.interrupt_status = InterruptType.interruptNMI
 
     def triggerIRQ(self):
@@ -505,7 +548,6 @@ class CPU:
         self.pc = self.read_uint16(0xFFFE)
         self.I = 1
         self.wait_cycles += 7
-
 
     def ADC(self, address, mode):
         a = self.A
@@ -802,23 +844,17 @@ class CPU:
         self.I = True
 
     def SRE(self, address, mode):
-        old_val = self.read_uint8(address)
         self.LSR(address, mode)
         self.EOR(address, mode)
-        return '{0:02X}'.format(old_val)
 
 
     def SLO(self, address, mode):
-        old_val = self.read_uint8(address)
         self.ASL(address, mode)
         self.ORA(address, mode)
-        return '{0:02X}'.format(old_val)
 
     def STA(self, address, mode):
         # TODO: Check if correct
-        old_val = self.read_uint8(address)
         self.memory.write(address, self.A)
-        return '{0:02X}'.format(old_val)
 
     def STX(self, address, mode):
         self.memory.write(address, self.X)

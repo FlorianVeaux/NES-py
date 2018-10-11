@@ -66,7 +66,10 @@ class NROMMapper(Mapper):
             raise NotImplementedError("Trying to write prg at {}".format(hex(address)))
 
     def read_chr(self, address):
-        return self._cartridge.read_chr_ram(address)
+        return self._cartridge.read_chr_rom(address)
+
+    def write_chr(self, address, value):
+        return self._cartridge.write_chr_rom(address, value)
 
 
 # Map of supported Mappers. See https://wiki.nesdev.com/w/index.php/Mapper.
