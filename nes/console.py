@@ -30,6 +30,7 @@ class Console:
 class Debugger:
     def __init__(self):
         self.data = []
+        self.pixel_data = []
 
     def log_data(self, debug_data):
         s = debug_data['PC'] + "  "
@@ -47,6 +48,16 @@ class Debugger:
 
     def log_str(self, s):
         self.data.append(s)
+
+    def log_pix(self, s, x, y):
+        print(x, y)
+        s = str(s) + ' '
+        if y == 0 and x == 0:
+            self.pixel_data.append('NEW FRAME\n')
+        if x == 0:
+            self.pixel_data.append(s)
+        else:
+            self.pixel_data[y] += s
 
     def dump(self, file_path):
         print('logging to {}'.format(file_path))

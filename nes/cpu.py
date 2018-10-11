@@ -503,7 +503,7 @@ class CPU:
             debug_data['cycles'] = self.step_cycles
             if rval is not None:
                 debug_data['mneumonic'] = debug_data['mneumonic'].replace("RESULT", rval)
-            self._console.debugger.log_data(debug_data)
+            # self._console.debugger.log_data(debug_data)
             # string print
         return self.step_cycles
 
@@ -846,23 +846,17 @@ class CPU:
         self.I = True
 
     def SRE(self, address, mode):
-        old_val = self.read_uint8(address)
         self.LSR(address, mode)
         self.EOR(address, mode)
-        return '{0:02X}'.format(old_val)
 
 
     def SLO(self, address, mode):
-        old_val = self.read_uint8(address)
         self.ASL(address, mode)
         self.ORA(address, mode)
-        return '{0:02X}'.format(old_val)
 
     def STA(self, address, mode):
         # TODO: Check if correct
-        old_val = self.read_uint8(address)
         self.memory.write(address, self.A)
-        return '{0:02X}'.format(old_val)
 
     def STX(self, address, mode):
         self.memory.write(address, self.X)

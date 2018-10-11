@@ -58,7 +58,6 @@ class PPUCTRL(Register):
         self.master_slave_flag     = (value & 0b01000000) >> 6
         self.nmi_flag              = (value & 0b10000000) >> 7
 
-        self.ppu._console.debugger.log_str('PPUCTRL NMI FLAG={}'.format(self.nmi_flag))
         self.ppu.nmi_change()
         # t: ...BA.. ........ = d: ......BA
         self.ppu.t = (self.ppu.t & 0b111001111111111) | ((value & 0b00000011) << 10)
@@ -76,7 +75,6 @@ class PPUMASK(Register):
         self.blue_emphasize_flag = 0     # 0: off, 1: on
 
     def write(self, value):
-        log.debug('Write ppumask val=%s', value)
         self.greyscale_flag        = (value & 0b00000001) >> 0
         self.left_background_flag  = (value & 0b00000010) >> 1
         self.left_sprites_flag     = (value & 0b00000100) >> 2
@@ -97,7 +95,6 @@ class PPUSTATUS(Register):
         val = self.vertical_blank_started_flag << 7
         val |= self.sprite_zero_flag << 6
         val |= self.sprite_overflow_flag << 5
-        self.ppu._console.debugger.log_str('PPUSTATUS READ NMI={}'.format(self.ppu.nmi_occured))
         if self.ppu.nmi_occured:
             val |= 1 << 7
         self.ppu.nmi_occured = False
@@ -180,6 +177,7 @@ class PPUADDR(Register):
             # v                   = t
             # w:                  = 0
             self.ppu.t = (self.ppu.t & 0b111111100000000) | value
+            self.ppu.v = self.ppu.t
             self.ppu.w = False
 
 
@@ -197,7 +195,7 @@ class PPUDATA(Register):
 
     def read(self):
         value = self.buffered_data
-        self.buffered_data = self.ppu.memory.read(self.ppu.v & 0x3FF)
+        self.buffered_data = self.ppu.memory.read(self.ppu.v & 0x3FFF)
 
         if self.ppu.v & 0x3F00 == 0x3F00: # This is a palette, return directly
             value = self.buffered_data
@@ -213,8 +211,7 @@ class OAMDMA(Register):
         self.ppu = ppu
 
     def write(self, value):
-        begin = value << 8
-        cpu_data = self.ppu.cpu.memory.read_page(begin)
+        cpu_data = self.ppu.cpu.memory.read_page(value)
         self.ppu.OAMDATA.upload_from_cpu(cpu_data)
 
         if self.ppu.clock % 2 == 1:
@@ -282,11 +279,11 @@ class PPU:
         self.background_data = 0 # 64 bits!
 
         # SPRITE TEMP VARS
-        sprite_count = 0
-        sprite_graphics = [] # 32 bits * 8
-        sprite_positions = [] # 1 bytes * 8
-        sprite_priorities = [] # 1 byte * 8
-        sprite_indexes = [] # 1 byte * 8
+        self.sprite_count = 0
+        self.sprite_graphics = np.zeros(8, dtype='uint32')
+        self.sprite_positions = np.zeros(8, dtype='uint8')
+        self.sprite_priorities = np.zeros(8, dtype='uint8')
+        self.sprite_indexes = np.zeros(8, dtype='uint8')
 
     def reset(self):
         self.clock = 340
@@ -316,7 +313,7 @@ class PPU:
         if self.clock == PPU.CLOCK_CYCLE:
             self.clock = 0
             self.scan_line += 1
-            if self.scan_line == PPU.PRE_RENDER_SCAN_LINE:
+            if self.scan_line > PPU.PRE_RENDER_SCAN_LINE:
                 self.scan_line = 0
                 self.frame += 1
                 self.is_even_screen = not self.is_even_screen
@@ -329,7 +326,6 @@ class PPU:
         self.nmi_previous = nmi
 
     def set_vertical_blank(self):
-        self._console.debugger.log_str('VerticalBlank')
         self.nmi_occured = True
         self.nmi_change()
 
@@ -350,6 +346,7 @@ class PPU:
         if not b and not s:
             color = 0
         elif not b and s:
+            self._console.debugger.log_str('SpriteOnly')
             color = sprite | 0x10
         elif not s and b:
             color = background
@@ -358,11 +355,12 @@ class PPU:
                 self.PPUSTATUS.sprite_zero_flag = 1
             if self.sprite_priorities[i] == 0:
                 color = sprite | 0x10
+                self._console.debugger.log_str('Sprite')
             else:
                 color = background
 
         palette_info = self.memory.read(0x3F00 + color % 64)
-        log.debug('Pixel x=%s, y=%s, c=%s', x, y, palette_info)
+        self._console.debugger.log_str('Pixel x={0}, y={1}, c={2}'.format(x, y, color % 64))
         # TODO: finish this
         # define a palette with all colors
         # c = palette[palette_info]
@@ -393,7 +391,7 @@ class PPU:
             if y == 29:
                 y = 0
                 # switch vertical nametable
-                ppu.v ^= 0x0800
+                self.v ^= 0x0800
             elif y == 31:
                 y = 0
             else:
@@ -428,7 +426,7 @@ class PPU:
             return i, color
         return 0, 0
 
-    def fetch_sprite_graphics(i, row):
+    def fetch_sprite_graphics(self, i, row):
         """Gets the 8 pixel's worth of graphical data for the given sprite.
         Args:
             row: the row WITHIN the sprite (0 == top of sprite)
@@ -436,7 +434,7 @@ class PPU:
         tile_index = self.OAMDATA.data[i * 4 + 1]
         attributes = self.OAMDATA.data[i * 4 + 2]
         vertical_flip = attributes & 0x80 == 0x80
-        horizontal_flip = attribute & 0x40 == 0x40
+        horizontal_flip = attributes & 0x40 == 0x40
         if not self.PPUCTRL.sprite_size_flag:
             # sprite of size 8
             if vertical_flip:
@@ -452,16 +450,21 @@ class PPU:
             if row > 7:
                 tile_index += 1
                 row -= 8
-        address = 0x1000 * table + 0x10 * tile + row
+        address = 0x1000 * table + 0x10 * tile_index + row
         low_tile_byte = self.memory.read(address)
         high_tile_byte = self.memory.read(address + 8)
         # We now combine together the data for 8 pixels, similar to
         # load_background_data
         a = (attributes & 0x3) << 2
+        data = 0
+        # if self.scan_line == 24:
+        #     pos_var = [(i, val) for (i, val) in enumerate(self._console.mapper._cartridge.CHR_ROM) if val]
+        #     self._console.debugger.log_str(str(pos_var))
+        #     self._console.debugger.log_str('Not null values={}'.format(len(pos_var)))
         for i in range(8):
             if horizontal_flip:
-                a = (high_tile_byte & 1) << 1
-                b = (high_tile_byte & 1) << 0
+                b = (high_tile_byte & 1) << 1
+                c = (high_tile_byte & 1) << 0
                 low_tile_byte >>= 1
                 high_tile_byte >>= 1
             else:
@@ -478,6 +481,8 @@ class PPU:
         """
         h = 16 if self.PPUCTRL.sprite_size_flag else 8
         data = self.OAMDATA.data
+        # self._console.debugger.log_str('LINE={}'.format(self.scan_line))
+        # self._console.debugger.log_str(str(data))
         count = 0
         for i in range(64):
             # get x, y and attribute data
@@ -489,17 +494,18 @@ class PPU:
                 continue
             count += 1
             if count <= 8:
-                self.sprite_graphics[count] = self.fetch_sprite_graphics(
+                self.sprite_graphics[count - 1] = self.fetch_sprite_graphics(
                     i, self.scan_line - top
                 )
-                self.sprite_positions[count] = x
-                self.sprite_priorities[count] = (a >> 5) & 1
-                self.sprite_indexes[count] = i
+                self.sprite_positions[count - 1] = x
+                self.sprite_priorities[count - 1] = (a >> 5) & 1
+                self.sprite_indexes[count - 1] = i
         if count > 8:
             # no rendering if we hit more than 8 sprites on this line, but
             # set the overflow flag in that case
             count = 8
             self.PPUSTATUS.sprite_overflow_flag = 1
+        # self._console.debugger.log_str('{0}: count={1}'.format(self.scan_line, count))
         self.sprite_count = count
 
     def get_background_pixel(self):
@@ -671,7 +677,6 @@ class PPU:
         """CPU and PPU communicate through the PPU's registers.
         """
 
-        log.debug('address=%s, val=%s', hex(address), value)
         self.latch_value = value
         if address == 0x2000:
             self.PPUCTRL.write(value)

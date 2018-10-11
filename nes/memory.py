@@ -76,7 +76,8 @@ class CPUMemory(object):
         if address <= 0x1F:
             address_begin = (address % 0x800) << 8
             address_end = address_begin | 0x00FF
-            return self._RAM[address:address_end]
+            data = self._RAM[address_begin:address_end + 1]
+            return data
         elif address <= 0x3F:
             raise NotImplementedError(
                 'You should not read a page of PPU registers'
@@ -93,6 +94,11 @@ class CPUMemory(object):
             raise NotImplementedError(
                 'We need a way to batch read from the cartdrige at address={}'.format(hex(address))
             )
+        else:
+            raise NotImplementedError(
+                'You should not read a page at address={}'.format(hex(address))
+            )
+
 
 
     def write(self, address, value):
@@ -162,6 +168,7 @@ class PPUMemory:
 
     def write(self, address, value):
         if address < 0x2000:
+            self._console.debugger.log_str('ADDR={0}, VAL={1}'.format(hex(address), value))
             self._console.mapper.write_chr(address, value)
         elif address < 0x3000:
             mirroring = self._console.mapper.mirror_id
