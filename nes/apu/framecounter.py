@@ -23,5 +23,8 @@ class FrameCounter:
         if address == 0x4017:
             self.register = value
             self.reset()
+            self.mode == 4 if value >> 7 == 0 else 5
+            self.irq_inhibit = (value >> 6) & 0x01
             if self.mode == 5:
                 self.should_execute = True
+            return

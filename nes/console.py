@@ -1,4 +1,4 @@
-from nes.apu import APU
+from nes.apu.apu import APU
 from nes.cpu import CPU
 from nes.ppu import PPU
 from nes.mapper import Mapper
