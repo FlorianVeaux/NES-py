@@ -11,7 +11,6 @@ def _abs_path(path):
 
 
 def main():
-    console = Console(_abs_path('../../tests/color_test.nes'))
     t = time.time()
     pygame.init()
 
@@ -25,8 +24,9 @@ def main():
     screen = pygame.display.set_mode(size)
     pixels = pygame.Surface(size).convert()
     pixels.fill((0, 0, 0)) # Black
-
     screen.blit(pixels, (0, 0))
+    console = Console(_abs_path('../../tests/color_test.nes'), pixels)
+
     is_frame_even = 0
     while 1:
         for event in pygame.event.get():
@@ -37,12 +37,6 @@ def main():
         while console.ppu.frame == old_frame_val:
             console.step()
 
-        for i in range(size[0]):
-            for j in range(size[1]):
-                if is_frame_even:
-                    pixels.set_at((i, j), Color(255, 255, 255, 1))
-                else:
-                    pixels.set_at((i, j), Color(0, 0, 0, 1))
         screen.blit(pixels, (0, 0))
         pygame.display.flip()
         is_frame_even = not is_frame_even

@@ -4,13 +4,14 @@ from nes.ppu import PPU
 from nes.mapper import Mapper
 
 class Console:
-    def __init__(self, file_name, debug=False):
+    def __init__(self, file_name, screen, debug=False):
         self._debug = debug
         if debug:
             self.debugger = Debugger()
         self.cpu = CPU(self)
         self.ppu = PPU(self)
         self.apu = APU(self)
+        self.screen = screen
         self.mapper = Mapper.from_nes_file(file_name)
         self.cpu.reset()
         self.ppu.reset()

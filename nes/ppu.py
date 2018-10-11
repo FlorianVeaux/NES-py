@@ -360,11 +360,7 @@ class PPU:
 
         palette_info = self.memory.read(0x3F00 + color % 64)
         c = PALETTE[palette_info]
-        # TODO: finish this
-        # define a palette with all colors
-        # c = palette[palette_info]
-        # render pixel on scren
-        # self._console.screen.setRGB(x, y, c)
+        self._console.screen.set_at((x, y), c)
 
     def increment_horizontal_scroll(self):
         """increment hori(v)"""
