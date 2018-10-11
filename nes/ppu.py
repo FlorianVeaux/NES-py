@@ -1,6 +1,7 @@
 import numpy as np
 from nes.memory import PPUMemory
 import logging
+from nes.palette import PALETTE
 
 
 log = logging.getLogger('nes.' + __name__)
@@ -346,7 +347,6 @@ class PPU:
         if not b and not s:
             color = 0
         elif not b and s:
-            self._console.debugger.log_str('SpriteOnly')
             color = sprite | 0x10
         elif not s and b:
             color = background
@@ -355,14 +355,11 @@ class PPU:
                 self.PPUSTATUS.sprite_zero_flag = 1
             if self.sprite_priorities[i] == 0:
                 color = sprite | 0x10
-                self._console.debugger.log_str('Sprite')
             else:
                 color = background
 
-        if x == 35 and y==25:
-            import pdb; pdb.set_trace()
         palette_info = self.memory.read(0x3F00 + color % 64)
-        self._console.debugger.log_str('Pixel x={0}, y={1}, c={2}'.format(x, y, palette_info))
+        c = PALETTE[palette_info]
         # TODO: finish this
         # define a palette with all colors
         # c = palette[palette_info]
@@ -459,10 +456,6 @@ class PPU:
         # load_background_data
         a = (attributes & 0x3) << 2
         data = 0
-        # if self.scan_line == 24:
-        #     pos_var = [(i, val) for (i, val) in enumerate(self._console.mapper._cartridge.CHR_ROM) if val]
-        #     self._console.debugger.log_str(str(pos_var))
-        #     self._console.debugger.log_str('Not null values={}'.format(len(pos_var)))
         for i in range(8):
             if horizontal_flip:
                 b = (high_tile_byte & 1) << 1
@@ -483,8 +476,6 @@ class PPU:
         """
         h = 16 if self.PPUCTRL.sprite_size_flag else 8
         data = self.OAMDATA.data
-        # self._console.debugger.log_str('LINE={}'.format(self.scan_line))
-        # self._console.debugger.log_str(str(data))
         count = 0
         for i in range(64):
             # get x, y and attribute data
@@ -507,7 +498,6 @@ class PPU:
             # set the overflow flag in that case
             count = 8
             self.PPUSTATUS.sprite_overflow_flag = 1
-        # self._console.debugger.log_str('{0}: count={1}'.format(self.scan_line, count))
         self.sprite_count = count
 
     def get_background_pixel(self):

@@ -504,7 +504,6 @@ class CPU:
             if rval is not None:
                 debug_data['mneumonic'] = debug_data['mneumonic'].replace("RESULT", rval)
             # self._console.debugger.log_data(debug_data)
-            # string print
         return self.step_cycles
 
     def execute_instruction(self, opcode, address, mode):
@@ -529,7 +528,6 @@ class CPU:
 
     def triggerNMI(self):
         # self.I -> 0: /IRQ and /NMI get through; 1: only /NMI gets through)
-        self._console.debugger.log_str('InterruptNMI')
         self.interrupt_status = InterruptType.interruptNMI
 
     def triggerIRQ(self):

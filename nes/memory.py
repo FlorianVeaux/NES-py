@@ -168,7 +168,6 @@ class PPUMemory:
 
     def write(self, address, value):
         if address < 0x2000:
-            self._console.debugger.log_str('ADDR={0}, VAL={1}'.format(hex(address), value))
             self._console.mapper.write_chr(address, value)
         elif address < 0x3000:
             mirroring = self._console.mapper.mirror_id
