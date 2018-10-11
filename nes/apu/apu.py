@@ -8,7 +8,7 @@ class APUError(Exception):
 class APU:
 
     def __init__(self, console):
-        self.registers = np.zeros(24, dtype='uint8')
+        self.registers = np.zeros(24, dtype='int')
         self.status = 0x00
         self.frame_counter = 0x00
         self.console = console

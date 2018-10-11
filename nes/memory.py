@@ -44,11 +44,11 @@ class CPUMemory(object):
     RAM_SIZE = 0x0800
 
     def __init__(self, console):
-        self._RAM = np.zeros(CPUMemory.RAM_SIZE, dtype='uint8')
+        self._RAM = np.zeros(CPUMemory.RAM_SIZE, dtype='int')
         self._console = console
 
     def reset(self):
-        self._RAM = np.zeros(CPUMemory.RAM_SIZE, dtype='uint8')
+        self._RAM = np.zeros(CPUMemory.RAM_SIZE, dtype='int')
 
     def read(self, address):
         if address <= 0x1FFF:
@@ -149,8 +149,8 @@ class PPUMemory:
 
     def __init__(self, console):
         self._console =  console
-        self._palette = np.zeros(PPUMemory.PALETTE_SIZE, dtype='uint8')
-        self._name_table = np.zeros(PPUMemory.NAME_TABLE_SIZE, dtype='uint8')
+        self._palette = np.zeros(PPUMemory.PALETTE_SIZE, dtype='int')
+        self._name_table = np.zeros(PPUMemory.NAME_TABLE_SIZE, dtype='int')
 
     def read(self, address):
         if address < 0x2000:

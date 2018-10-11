@@ -11,7 +11,7 @@ def _abs_path(path):
 
 
 def main():
-    console = Console(_abs_path('../../tests/color_test.nes'), debug=True)
+    console = Console(_abs_path('../../tests/color_test.nes'))
     t = time.time()
     pygame.init()
 
@@ -47,4 +47,3 @@ def main():
         pygame.display.flip()
         is_frame_even = not is_frame_even
 
-main()

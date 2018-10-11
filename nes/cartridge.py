@@ -25,9 +25,9 @@ class Cartridge:
         self.PRG_ROM = prg_rom
         self.CHR_ROM = chr_rom
         if chr_ram_size:
-            self.CHR_RAM = np.zeros(chr_ram_size, dtype='uint8')
+            self.CHR_RAM = np.zeros(chr_ram_size, dtype='int')
         if prg_ram_size:
-            self.PRG_RAM = np.zeros(prg_ram_size, dtype='uint8')
+            self.PRG_RAM = np.zeros(prg_ram_size, dtype='int')
 
     def read_prg_rom(self, address):
         try:

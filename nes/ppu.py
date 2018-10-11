@@ -129,7 +129,7 @@ class OAMDATA(Register):
     """
     def __init__(self, ppu):
         self.ppu = ppu
-        self.data = np.zeros(256, dtype='uint8')
+        self.data = np.zeros(256, dtype='int')
 
     def read(self):
         oam_address = self.ppu.OAMADDR.address
@@ -282,9 +282,9 @@ class PPU:
         # SPRITE TEMP VARS
         self.sprite_count = 0
         self.sprite_graphics = np.zeros(8, dtype='uint32')
-        self.sprite_positions = np.zeros(8, dtype='uint8')
-        self.sprite_priorities = np.zeros(8, dtype='uint8')
-        self.sprite_indexes = np.zeros(8, dtype='uint8')
+        self.sprite_positions = np.zeros(8, dtype='int')
+        self.sprite_priorities = np.zeros(8, dtype='int')
+        self.sprite_indexes = np.zeros(8, dtype='int')
 
     def reset(self):
         self.clock = 340
