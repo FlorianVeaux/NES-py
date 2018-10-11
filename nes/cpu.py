@@ -428,7 +428,7 @@ class CPU:
                 'PC': '{0:04X}'.format(self.pc),
                 'opcode': '{0:02X}'.format(opcode),
                 'args': ['{0:02X}'.format(a) for a in args],
-                'mneumonic': self._get_mneumonic(opcode, mode, args),
+                'mneumonic': self._get_mneumonic_safe(opcode, mode, args),
                 'A': 'A:{0:02X}'.format(self.A),
                 'X': 'X:{0:02X}'.format(self.X),
                 'Y': 'Y:{0:02X}'.format(self.Y),
