@@ -1,5 +1,4 @@
 from nes.utility import parse_nes_file
-import numpy as np
 import logging
 
 

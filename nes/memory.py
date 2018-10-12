@@ -1,4 +1,3 @@
-import numpy as np
 import pdb
 import logging
 
@@ -44,11 +43,11 @@ class CPUMemory(object):
     RAM_SIZE = 0x0800
 
     def __init__(self, console):
-        self._RAM = np.zeros(CPUMemory.RAM_SIZE, dtype='int')
+        self._RAM = [0 for i in range(CPUMemory.RAM_SIZE)]
         self._console = console
 
     def reset(self):
-        self._RAM = np.zeros(CPUMemory.RAM_SIZE, dtype='int')
+        self._RAM = [0 for i in range(CPUMemory.RAM_SIZE)]
 
     def read(self, address):
         if address <= 0x1FFF:
@@ -149,8 +148,8 @@ class PPUMemory:
 
     def __init__(self, console):
         self._console =  console
-        self._palette = np.zeros(PPUMemory.PALETTE_SIZE, dtype='int')
-        self._name_table = np.zeros(PPUMemory.NAME_TABLE_SIZE, dtype='int')
+        self._palette = [0 for i in range(PPUMemory.PALETTE_SIZE)]
+        self._name_table = [0 for i in range(PPUMemory.NAME_TABLE_SIZE)]
 
     def read(self, address):
         if address < 0x2000:

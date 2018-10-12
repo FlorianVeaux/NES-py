@@ -1,4 +1,3 @@
-import numpy as np
 from nes.memory import PPUMemory
 import logging
 from nes.palette import PALETTE
@@ -129,7 +128,7 @@ class OAMDATA(Register):
     """
     def __init__(self, ppu):
         self.ppu = ppu
-        self.data = np.zeros(256, dtype='int')
+        self.data = [0 for i in range(256)]
 
     def read(self):
         oam_address = self.ppu.OAMADDR.address
@@ -212,13 +211,13 @@ class OAMDMA(Register):
         self.ppu = ppu
 
     def write(self, value):
-        cpu_data = self.ppu.cpu.memory.read_page(value)
+        cpu_data = self.ppu._console.cpu.memory.read_page(value)
         self.ppu.OAMDATA.upload_from_cpu(cpu_data)
 
         if self.ppu.clock % 2 == 1:
-            self.ppu.cpu.wait_cycles += 514
+            self.ppu._console.cpu.wait_cycles += 514
         else:
-            self.ppu.cpu.wait_cycles += 513
+            self.ppu._console.cpu.wait_cycles += 513
 
 
 
@@ -232,7 +231,6 @@ class PPU:
     def __init__(self, console):
         self.memory = PPUMemory(console)
         self._console = console
-        self.cpu = console.cpu
 
         self.latch_value = 0
 
@@ -281,10 +279,10 @@ class PPU:
 
         # SPRITE TEMP VARS
         self.sprite_count = 0
-        self.sprite_graphics = np.zeros(8, dtype='uint32')
-        self.sprite_positions = np.zeros(8, dtype='int')
-        self.sprite_priorities = np.zeros(8, dtype='int')
-        self.sprite_indexes = np.zeros(8, dtype='int')
+        self.sprite_graphics = [0 for i in range(8)]
+        self.sprite_positions = [0 for i in range(8)]
+        self.sprite_priorities = [0 for i in range(8)]
+        self.sprite_indexes = [0 for i in range(8)]
 
     def reset(self):
         self.clock = 340

@@ -1,4 +1,3 @@
-import numpy as np
 from collections import namedtuple
 import logging
 
@@ -55,7 +54,7 @@ def parse_nes_file(f):
 def _extract_header(f):
     _next = lambda: f.read(1)[0]
     i = 0
-    h = np.zeros(HEADER_SIZE, dtype='int')
+    h = [0 for i in range(HEADER_SIZE)]
     for i in range(HEADER_SIZE):
         b = _next()
         h[i] = b
@@ -71,8 +70,8 @@ def _extract_header(f):
     )
 
 def _extract_chunk(f, size):
-    """Extracts size bytes from the file and returns the data as a
-    numpy array.
+    """Extracts size bytes from the file and returns the data as an
+    array.
     """
     log.debug('Extracting chunk of size %s', size)
     _next = lambda: f.read(1)[0]

@@ -177,6 +177,7 @@ INSTRUCTION_IS_VALID = [
 class CPU:
     def __init__(self, console):
         self._console = console
+        self.ppu = console.ppu
         self.memory = CPUMemory(console)
         self.step_cycles = 0
         self.pc = 0 # Program counter
@@ -502,6 +503,8 @@ class CPU:
             if rval is not None:
                 debug_data['mneumonic'] = debug_data['mneumonic'].replace("RESULT", rval)
             # self._console.debugger.log_data(debug_data)
+        for i in range(3 * self.step_cycles):
+            self.ppu.step()
         return self.step_cycles
 
     def execute_instruction(self, opcode, address, mode):

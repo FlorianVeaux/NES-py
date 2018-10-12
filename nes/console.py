@@ -8,10 +8,10 @@ class Console:
         self._debug = debug
         if debug:
             self.debugger = Debugger()
-        self.cpu = CPU(self)
-        self.ppu = PPU(self)
-        self.apu = APU(self)
         self.screen = screen
+        self.ppu = PPU(self)
+        self.cpu = CPU(self)
+        self.apu = APU(self)
         self.mapper = Mapper.from_nes_file(file_name)
         self.cpu.reset()
         self.ppu.reset()
