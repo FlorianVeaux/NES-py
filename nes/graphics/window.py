@@ -1,4 +1,5 @@
 import pygame
+import cProfile
 from pygame.locals import *
 from nes.console import Console
 import sys
@@ -26,17 +27,26 @@ def main():
     pixels.fill((0, 0, 0)) # Black
     screen.blit(pixels, (0, 0))
     console = Console(_abs_path('../../tests/color_test.nes'), pixels)
+    pr = cProfile.Profile()
 
+    pr.enable()
     is_frame_even = 0
+    frame_count = 0
     while 1:
         for event in pygame.event.get():
             if event.type == QUIT:
                 sys.exit(0)
 
+        if frame_count == 20:
+            pr.disable()
+            pr.dump_stats(_abs_path('screen.profile'))
+            sys.exit(0)
+
         old_frame_val = console.ppu.frame
         while console.ppu.frame == old_frame_val:
             console.step()
 
+        frame_count += 1
         screen.blit(pixels, (0, 0))
         pygame.display.flip()
         is_frame_even = not is_frame_even
