@@ -16,3 +16,4 @@ def test_cpu_perf():
     # with rp as p:
     #     for i in range(CYCLES):
     #         cpu.memory.read(0xFFFF)
+

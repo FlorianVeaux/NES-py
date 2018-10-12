@@ -18,9 +18,9 @@ class Mapper:
         self.PRG_ROM = prg_rom
         self.CHR_ROM = chr_rom
         if chr_ram_size:
-            self.CHR_RAM = np.zeros(chr_ram_size, dtype='int')
+            self.CHR_RAM = [0 for i in range(chr_ram_size)]
         if prg_ram_size:
-            self.PRG_RAM = np.zeros(prg_ram_size, dtype='int')
+            self.CHR_RAM = [0 for i in range(prg_ram_size)]
 
     def read_prg(self, address):
         raise NotImplementedError

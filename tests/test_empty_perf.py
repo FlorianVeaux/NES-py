@@ -2,22 +2,23 @@ from tests.utils import Profiler
 import numpy as np
 
 
-T = [1]
+T = [1,2,3]
 
 class A:
     def __init__(self):
         self.d = np.zeros(0x2000, dtype='int')
 
     def a_step(self):
-        return T[0]
+        address = 0x8000
+        return T[0x8000 % 0x3]
 
 
 
 
 
-def empty_test_perf():
-    CYCLES = 300000
-    p = Profiler('empty')
+def test_empty_perf():
+    CYCLES = 700000
+    p = Profiler('empty.profile')
     a = A()
 
     with p as f:

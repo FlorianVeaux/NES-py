@@ -1,4 +1,3 @@
-from enum import IntEnum
 from nes.memory import CPUMemory
 import pdb
 import logging
@@ -6,25 +5,24 @@ import logging
 
 log = logging.getLogger('nes.' + __name__)
 
-class InterruptType(IntEnum):
-    interruptNone = 1
-    interruptNMI = 2
-    interruptIRQ = 3
 
-class AddressingMode(IntEnum):
-    modeAbsolute = 1
-    modeAbsoluteX = 2
-    modeAbsoluteY = 3
-    modeAccumulator = 4
-    modeImmediate = 5
-    modeImplied = 6
-    modeIndexedIndirect = 7
-    modeIndirect = 8
-    modeIndirectIndexed = 9
-    modeRelative = 10
-    modeZeroPage = 11
-    modeZeroPageX = 12
-    modeZeroPageY = 13
+INTERRUPT_NONE = 1
+INTERRUPT_NMI = 2
+INTERRUPT_IRQ = 3
+
+MODE_ABSOLUTE = 1
+MODE_ABSOLUTE_X = 2
+MODE_ABSOLUTE_Y = 3
+MODE_ACCUMULATOR = 4
+MODE_IMMEDIATE = 5
+MODE_IMPLIED = 6
+MODE_INDEXED_INDIRECT = 7
+MODE_INDIRECT = 8
+MODE_INDIRECT_INDEXED = 9
+MODE_RELATIVE = 10
+MODE_ZERO_PAGE = 11
+MODE_ZERO_PAGE_X = 12
+MODE_ZERO_PAGE_Y = 13
 
 # Addressing mode for each instruction
 INSTRUCTION_MODES = [
@@ -198,7 +196,7 @@ class CPU:
         #ENDOF PROCESSOR FLAGS
         self.instruction_table = [getattr(self, i) if hasattr(self, i) else None  for i in INSTRUCTION_NAMES]
         self.wait_cycles = 0
-        self.interrupt_status = InterruptType.interruptNone
+        self.interrupt_status = INTERRUPT_NONE
 
     def read_uint8(self, address):
         """Reads a byte from the memory at the given address
@@ -279,7 +277,7 @@ class CPU:
     def _get_mneumonic(self, opcode, mode, args):
         s = " " if INSTRUCTION_IS_VALID[opcode] else "*"
         s += INSTRUCTION_NAMES[opcode] + " "
-        if mode == AddressingMode.modeAbsolute:
+        if mode == MODE_ABSOLUTE:
             arg = self.read_uint16(self.pc + 1)
             if INSTRUCTION_NAMES[opcode] not in ["JMP", "JSR"]:
                 s += "${0:04X} = {1:02X}".format(
@@ -290,7 +288,7 @@ class CPU:
                 s += "${0:04X}".format(
                     arg
                 )
-        elif mode == AddressingMode.modeAbsoluteX:
+        elif mode == MODE_ABSOLUTE_X:
             arg = self.read_uint16(self.pc + 1)
             arg_x = (arg + self.X) & 0xFFFF
             s += "${0:04X},X @ {1:04X} = {2:02X}".format(
@@ -298,41 +296,41 @@ class CPU:
                 arg_x,
                 self.read_uint8(arg_x)
                 )
-        elif mode == AddressingMode.modeAbsoluteY:
+        elif mode == MODE_ABSOLUTE_Y:
             arg = self.read_uint16(self.pc + 1)
             arg_y = (arg + self.Y) & 0xFFFF
             s += '${0:04X},Y @ {1:04X} = {2:02X}'.format(arg, arg_y, self.read_uint8(arg_y))
-        elif mode == AddressingMode.modeAccumulator:
+        elif mode == MODE_ACCUMULATOR:
             s += "A"
-        elif mode == AddressingMode.modeImmediate:
+        elif mode == MODE_IMMEDIATE:
             s += '#${0:02X}'.format(args[0])
-        elif mode == AddressingMode.modeImplied:
+        elif mode == MODE_IMPLIED:
             pass
-        elif mode == AddressingMode.modeIndexedIndirect:
+        elif mode == MODE_INDEXED_INDIRECT:
             s += "(${0:02X},X) @ {1:02X} = {2:04X} = RESULT".format(
                     args[0],
                     (args[0] + self.X) & 0xFF,
                     self.read_uint16_bug((args[0] + self.X) & 0xFF)
                 )
-        elif mode == AddressingMode.modeIndirect:
+        elif mode == MODE_INDIRECT:
             arg = self.read_uint16(self.pc + 1)
             s += "(${0:04X}) = {1:04X}".format(arg, self.read_uint16_bug(arg))
-        elif mode == AddressingMode.modeIndirectIndexed:
+        elif mode == MODE_INDIRECT_INDEXED:
             s += "(${0:02X}),Y = {1:04X} @ {2:04X} = RESULT".format(
                     args[0],
                     self.read_uint16_bug(args[0]),
                     (self.read_uint16_bug(args[0]) + self.Y) & 0xFFFF,
                 )
-        elif mode == AddressingMode.modeRelative:
+        elif mode == MODE_RELATIVE:
             branch_offset = self.read_uint8(self.pc + 1)
             if(branch_offset & 0b10000000):
                 branch_offset = branch_offset - 256
 
             arg = self.pc + 2 + branch_offset
             s += "${0:04X}".format(arg)
-        elif mode == AddressingMode.modeZeroPage:
+        elif mode == MODE_ZERO_PAGE:
             s += "${0:02X} = {1:02X}".format(args[0], self.read_uint8(args[0]))
-        elif mode == AddressingMode.modeZeroPageX:
+        elif mode == MODE_ZERO_PAGE_X:
             arg = self.read_uint8(self.pc+1)
             arg_x = (arg + self.X) & 0xFF
             s += "${0:02X},X @ {1:02X} = {2:02X}".format(
@@ -340,7 +338,7 @@ class CPU:
                 arg_x,
                 self.read_uint8(arg_x)
             )
-        elif mode == AddressingMode.modeZeroPageY:
+        elif mode == MODE_ZERO_PAGE_Y:
             s += "${0:02X},Y @ {1:02X} = {2:02X}".format(
                 args[0],
                 (args[0] + self.Y) & 0xFF,
@@ -351,52 +349,52 @@ class CPU:
     def _get_mneumonic_safe(self, opcode, mode, args):
         s = " " if INSTRUCTION_IS_VALID[opcode] else "*"
         s += INSTRUCTION_NAMES[opcode] + " "
-        if mode == AddressingMode.modeAbsolute:
+        if mode == MODE_ABSOLUTE:
             arg = self.read_uint16(self.pc + 1)
             s += "${0:04X}".format(
                 arg
             )
-        elif mode == AddressingMode.modeAbsoluteX:
+        elif mode == MODE_ABSOLUTE_X:
             arg = self.read_uint16(self.pc + 1)
             s += "${0:04X},X".format(
                 arg
                 )
-        elif mode == AddressingMode.modeAbsoluteY:
+        elif mode == MODE_ABSOLUTE_Y:
             arg = self.read_uint16(self.pc + 1)
             s += '${0:04X},Y'.format(arg)
-        elif mode == AddressingMode.modeAccumulator:
+        elif mode == MODE_ACCUMULATOR:
             s += "A"
-        elif mode == AddressingMode.modeImmediate:
+        elif mode == MODE_IMMEDIATE:
             s += '#${0:02X}'.format(args[0])
-        elif mode == AddressingMode.modeImplied:
+        elif mode == MODE_IMPLIED:
             pass
-        elif mode == AddressingMode.modeIndexedIndirect:
+        elif mode == MODE_INDEXED_INDIRECT:
             s += "(${0:02X},X)".format(
                     args[0]
                 )
-        elif mode == AddressingMode.modeIndirect:
+        elif mode == MODE_INDIRECT:
             arg = self.read_uint16(self.pc + 1)
             s += "(${0:04X})".format(arg)
-        elif mode == AddressingMode.modeIndirectIndexed:
+        elif mode == MODE_INDIRECT_INDEXED:
             s += "(${0:02X}),Y".format(
                     args[0]
                 )
-        elif mode == AddressingMode.modeRelative:
+        elif mode == MODE_RELATIVE:
             branch_offset = self.read_uint8(self.pc + 1)
             if(branch_offset & 0b10000000):
                 branch_offset = branch_offset - 256
 
             arg = self.pc + 2 + branch_offset
             s += "${0:04X}".format(arg)
-        elif mode == AddressingMode.modeZeroPage:
+        elif mode == MODE_ZERO_PAGE:
             s += "${0:02X}".format(args[0])
-        elif mode == AddressingMode.modeZeroPageX:
+        elif mode == MODE_ZERO_PAGE_X:
             arg = self.read_uint8(self.pc+1)
             arg_x = (arg + self.X) & 0xFF
             s += "${0:02X},X".format(
                 arg
             )
-        elif mode == AddressingMode.modeZeroPageY:
+        elif mode == MODE_ZERO_PAGE_Y:
             s += "${0:02X},Y @ {1:02X} = {2:02X}".format(
                 args[0],
                 (args[0] + self.Y) & 0xFF,
@@ -410,14 +408,14 @@ class CPU:
             self.wait_cycles -= 1
             return 1
 
-        if self.interrupt_status == InterruptType.interruptNMI:
+        if self.interrupt_status == INTERRUPT_NMI:
             self.nmi()
-            self.interrupt_status = InterruptType.interruptNone
+            self.interrupt_status = INTERRUPT_NONE
             return 0
 
-        elif self.interrupt_status == InterruptType.interruptIRQ:
+        elif self.interrupt_status == INTERRUPT_IRQ:
             self.irq()
-            self.interrupt_status = InterruptType.interruptNone
+            self.interrupt_status = INTERRUPT_NONE
             return 0
 
         opcode = self.read_uint8(self.pc)
@@ -439,53 +437,53 @@ class CPU:
         page_crossed = False # Set to true when an underlying addition between a uint16 and a uint8 carries to the high byte
         self.step_cycles = 0
 
-        if mode == AddressingMode.modeAbsolute:
+        if mode == MODE_ABSOLUTE:
             arg = self.read_uint16(self.pc + 1)
-        elif mode == AddressingMode.modeAbsoluteX:
+        elif mode == MODE_ABSOLUTE_X:
             uint16_address = self.read_uint16(self.pc + 1)
             uint8_index_register = self.X
 
             arg = uint16_address + uint8_index_register
             page_crossed = self.pagesDiffer(uint16_address, arg)
-        elif mode == AddressingMode.modeAbsoluteY:
+        elif mode == MODE_ABSOLUTE_Y:
             uint16_address = self.read_uint16(self.pc + 1)
             uint8_index_register = self.Y
 
             arg = (uint16_address + uint8_index_register) & 0xFFFF
             page_crossed = self.pagesDiffer(uint16_address, arg)
-        elif mode == AddressingMode.modeAccumulator:
+        elif mode == MODE_ACCUMULATOR:
             # Works on self.A directly
             arg = 0
-        elif mode == AddressingMode.modeImmediate:
+        elif mode == MODE_IMMEDIATE:
             arg = self.pc+1
-        elif mode == AddressingMode.modeImplied:
+        elif mode == MODE_IMPLIED:
             # For many 6502 instructions the source and destination of the information to be
             # manipulated is implied directly by the function of the instruction itself and
             # no further operand needs to be specified. Operations like 'Clear Carry Flag'
             # (CLC) and 'Return from Subroutine' (RTS) are implicit.
             arg = 0
-        elif mode == AddressingMode.modeIndexedIndirect:
+        elif mode == MODE_INDEXED_INDIRECT:
             # Warning, there's a bug, the addition with X does not carry. TODO Need to be implemented
             arg = self.read_uint16_bug((self.read_uint8(self.pc+1) + self.X) & 0xFF)
-        elif mode == AddressingMode.modeIndirect:
+        elif mode == MODE_INDIRECT:
             # Same bug
             arg = self.read_uint16_bug(self.read_uint16(self.pc + 1))
-        elif mode == AddressingMode.modeIndirectIndexed:
+        elif mode == MODE_INDIRECT_INDEXED:
             # Same bug
             arg = (self.read_uint16_bug(self.read_uint8(self.pc + 1)) + self.Y) & 0xFFFF
             page_crossed = self.pagesDiffer(arg - self.Y, arg)
-        elif mode == AddressingMode.modeRelative:
+        elif mode == MODE_RELATIVE:
             branch_offset = self.read_uint8(self.pc + 1)
             if(branch_offset & 0b10000000):
                 branch_offset = branch_offset - 256
 
             arg = self.pc + 2 + branch_offset
-        elif mode == AddressingMode.modeZeroPage:
+        elif mode == MODE_ZERO_PAGE:
             arg = self.read_uint8(self.pc + 1)
-        elif mode == AddressingMode.modeZeroPageX:
+        elif mode == MODE_ZERO_PAGE_X:
             # Wraps around to stay on Zero page
             arg = (self.read_uint8(self.pc + 1) + self.X) & 0xff
-        elif mode == AddressingMode.modeZeroPageY:
+        elif mode == MODE_ZERO_PAGE_Y:
             # Wraps around to stay on Zero page
             arg = (self.read_uint8(self.pc + 1) + self.Y) & 0xff
         else:
@@ -528,12 +526,12 @@ class CPU:
 
     def triggerNMI(self):
         # self.I -> 0: /IRQ and /NMI get through; 1: only /NMI gets through)
-        self.interrupt_status = InterruptType.interruptNMI
+        self.interrupt_status = INTERRUPT_NMI
 
     def triggerIRQ(self):
         # self.I -> 0: /IRQ and /NMI get through; 1: only /NMI gets through)
         if(self.I == 0):
-            self.interrupt_status = InterruptType.interruptIRQ
+            self.interrupt_status = INTERRUPT_IRQ
 
     def nmi(self):
         self.push_uint16(self.pc)
@@ -566,7 +564,7 @@ class CPU:
         return '{0:02X}'.format(val)
 
     def ASL(self, address, mode):
-        if mode == AddressingMode.modeAccumulator:
+        if mode == MODE_ACCUMULATOR:
             self.C = (self.A >> 7) & 1
             self.A = (self.A << 1) & 0xFF # force register to stay on 8 bits
             self.set_ZN(self.A)
@@ -736,7 +734,7 @@ class CPU:
         self.set_ZN(self.Y)
 
     def LSR(self, address, mode):
-        if mode == AddressingMode.modeAccumulator:
+        if mode == MODE_ACCUMULATOR:
             self.C = self.A & 1
             self.A = self.A >> 1
             self.set_ZN(self.A)
@@ -776,7 +774,7 @@ class CPU:
         return '{0:02X}'.format(old_val)
 
     def ROL(self, address, mode):
-        if mode == AddressingMode.modeAccumulator:
+        if mode == MODE_ACCUMULATOR:
             hi_a = (self.A & 0b10000000) >> 7
             self.A = ((self.A << 1) & 0xFF) | (self.C)
             self.C = hi_a
@@ -790,7 +788,7 @@ class CPU:
             self.set_ZN(value)
 
     def ROR(self, address, mode):
-        if mode == AddressingMode.modeAccumulator:
+        if mode == MODE_ACCUMULATOR:
             lo_a = self.A & 1
             self.A = (self.A >> 1) | (self.C << 7)
             self.C = lo_a

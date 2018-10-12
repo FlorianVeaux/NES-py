@@ -76,9 +76,9 @@ def _extract_chunk(f, size):
     """
     log.debug('Extracting chunk of size %s', size)
     _next = lambda: f.read(1)[0]
-    data = np.zeros(size, dtype='int')
+    data = []
     for i in range(size):
-        data[i] = _next()
+        data.append(_next())
     return data
 
 def _mapper_id(header):
